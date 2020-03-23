@@ -1,0 +1,178 @@
+---
+title: "CKME136-Part 7-Classifier 3- Naive Bayes"
+author: "Minh Trung DANG"
+date: "13/03/2020"
+output:
+ word_document: default
+ html_document: default
+   editor_options:
+   chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+BRFSS29_Smote <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote.csv", header=TRUE, sep=",")
+```
+
+
+```{r}
+library(caret)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+BRFSS29_Selected <- BRFSS29_Smote %>% 
+  dplyr::select(AGE , DIABETE , EMPL , GENHLTH , LASTDENTV , PULMOND , RMVTETH , INCOME , MEDICOST , SMOKESTAT , MARSTA , SLEPTIM1 , ARTHRITIS , CANCER , PHYSHLTHpa30 , MENTHLTHpa30, MICHD)
+```
+
+```{r}
+str(BRFSS29_Selected)
+```
+
+```{r}
+Trainindex <- createDataPartition(y = BRFSS29_Selected$MICHD , p = 0.70, list = FALSE)
+training <- BRFSS29_Selected[Trainindex ,]
+validation <- BRFSS29_Selected[-Trainindex,]
+```
+
+```{r}
+x <- training[,-17]
+y <- training[,17]
+```
+
+```{r}
+train_control <- trainControl(method = "cv", number = 10)
+```
+
+```{r}
+# train model
+nb.m1 <- caret::train(x = x, y = y, method = "nb", trControl = train_control)
+```
+
+
+```{r}
+# Model Evaluation
+#Predict testing set
+PredictNB1 <- predict(nb.m1, newdata = validation)
+#Get the confusion matrix to see accuracy value and other parameter values
+confusionMatrix(PredictNB1, validation$MICHD)
+```
+
+```{r}
+#Plot Variable performance
+X <- varImp(nb.m1)
+plot(X)
+```
+
+
+```{r}
+install.packages("mlr")
+```
+```{r}
+library(mlr)
+```
+
+```{r}
+nb.m1
+```
+
+```{r}
+library(mlr)
+```
+
+```{r}
+#Create a classification task for learning on and specify the target feature
+task = makeClassifTask(data = training, target = "MICHD")
+#Initialize the Naive Bayes classifier
+selected_model = makeLearner("classif.naiveBayes")
+#Train the model
+NB_mlr = train(selected_model, task)
+```
+
+```{r}
+NB_mlr$learner.model
+```
+
+
+```{r}
+library(e1071)
+```
+
+```{r}
+NB1071 <- naiveBayes(data = BRFSS29_Selected,
+                     MICHD~ . )
+
+NB1071 # that one is faster than the package caret
+```
+
+
+```{r}
+nb_laplace1 <- naiveBayes(MICHD~., data = training, laplace=1)
+laplace1_pred <- predict(nb_laplace1, validation, type="class")
+ 
+table(laplace1_pred, validation$MICHD,dnn=c("Prediction","Actual"))
+
+```
+
+```{r}
+caret::confusionMatrix(laplace1_pred, validation$MICHD)
+```
+
+
+```{r}
+library(caret)
+```
+
+
+
+```{r}
+predicted.class_e1071 <- predict(NB1071, newdata = validation, type = "class")
+caret::confusionMatrix(predicted.class_e1071, validation$MICHD)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

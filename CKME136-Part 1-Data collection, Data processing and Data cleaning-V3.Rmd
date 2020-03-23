@@ -1,0 +1,1814 @@
+---
+title: "CKME136-Part 1-Data collection, Data processing, and Data cleaning (13-03-2020)"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(foreign)
+library(gtools)
+library(tidyverse)
+library(questionr)
+library(MASS)
+library(DataExplorer)
+```
+
+```{r}
+getwd()
+```
+
+In order to read xpt file, we use the foreign package
+
+```{r}
+library(foreign)
+```
+
+```{r}
+BRFSS_Raw <- read.xport("C:/Users/user/Desktop/Capstone Project/Submission/LLCP2018.XPT")
+```
+
+```{r, fig.height= 20}
+plot_missing(BRFSS_Raw)
+```
+
+We only keep variables that we need
+
+Defining object list of variables to be kept
+
+***Record Identification*** (A)
+  A1. IYEAR
+  A2. IMONTH
+  A3. IDAY
+  A4. X_STATE
+
+***Demographics*** (B)
+  B1. AGE
+  B2. SEX1 
+  B3. X_RACE 
+  B4. MARITAL (Marital Status)
+  B5. EDUCA (Education Level)
+  B6. EMPLOY1 (Employment Status)
+  B7. INCOME1 (Income Level)
+  B8. RENTHOM1 (Do you own or rent your home?)
+
+***Urban status*** (C)
+  C1. X_METSTAT Metropolitan Status 
+  C2. X_URBSTAT Urban/Rural Status
+
+***Lifestyle*** (D)
+  D1. X_SMOKER3 Four-level smoker status:  Everyday smoker, Someday smoker, Former smoker, Non-smoker
+  D2. ALCDAY5 Days in past 30 had alcoholic beverage
+  D3. SLEPTIM1 How Much Time Do You Sleep
+  D4. EXERANY2 Exercise in Past 30 Days 
+
+***Health Status*** (E)
+  E1. GENHLTH
+      
+***Healthy Days*** (F)— Health Related Quality of Life 
+  F1. PHYSHLTH (Number of Days Physical Health Not Good)
+  F2. MENTHLTH (Number of Days Mental Health Not Good)
+  F3. POORHLTH (Poor Physical or Mental Health)
+  
+***Health Care Access*** (G)
+  G1. HLTHPLN1 (Have any health care coverage)
+  G2. MEDCOST (Could Not See Doctor Because of Cost)
+  G3. CHECKUP1  
+
+***Chronic Health Conditions*** (H)
+  H1. ASTHMA3 (Ever Told Had Asthma)
+  H2. CHCCOPD1 (Ever told) you have chronic obstructive pulmonary disease, emphysema or chronic bronchitis? 
+  h3. HAVARTH3 Told Have Arthritis
+  H4. ADDEPEV2 Ever told you had a depressive disorder
+  H5. CHCKDNY1 (Ever told) you have kidney disease? 
+  H6. DIABETE3 (Ever told) you have diabetes)
+  H7. CHCSCNCR (Ever told) you had skin cancer? 
+      CHCOCNCR (Ever told) you had any other types of cancer?  
+
+***Oral Health*** (I)
+  I1. LASTDEN4 (Last Visited Dentist or Dental Clinic)
+  I2. RMVTETH4 (Number of Permanent Teeth Removed)
+      
+***Obesity (J)***
+  J1. X_BMI5CAT
+
+***MICHD (Outcome) (K)***
+  K1. X_MICHD
+      
+
+```{r}
+BRFSS_VarList <- c("X_STATE", "IMONTH", "IDAY", "IYEAR", # Record Identification
+                  "X_AGEG5YR","SEX1", "X_RACE", "MARITAL", "EDUCA", "INCOME2", "EMPLOY1", "RENTHOM1",# Demographics
+                  "X_METSTAT","X_URBSTAT", # Urban Rural , Metropolitan, Non-metropolitan
+                  "ALCDAY5", "X_SMOKER3", "EXERANY2", "SLEPTIM1", # Lifestyle
+                  "GENHLTH", # Health Status
+                  "MENTHLTH", "PHYSHLTH", "POORHLTH", # Healthy Days - HRQOL
+                  "HLTHPLN1", "CHECKUP1", "MEDCOST", # Health Care Access
+                  "RMVTETH4", "LASTDEN4", # Oral Health
+                  "CVDSTRK3","DIABETE3", "HAVARTH3", "ASTHMA3", "CHCCOPD1", "ADDEPEV2", "CHCSCNCR", "CHCOCNCR", "CHCKDNY1", # Chronic Health Conditions
+                  "X_BMI5CAT",# Obesity
+                  "X_MICHD")# the outcome
+```
+
+
+```{r}
+#subset by varlist
+BRFSS_selected <- BRFSS_Raw[BRFSS_VarList]
+```
+
+```{r}
+str(BRFSS_selected)
+```
+
+1. FIRST DATA EXPLORATION
+This step is mainly for dealing with recoding, missing value, and outliers.
+
+```{r}
+library(DataExplorer)
+```
+ 
+```{r}
+introduce(BRFSS_selected)
+```
+ 
+There is 16622568 observations and 281851 missing values. 
+There are only 204755 complete rows.
+
+```{r}
+plot_intro(BRFSS_selected)
+```
+
+```{r, fig.height= 10, fig.width= 7.5}
+## View missing value distribution for airquality data
+plot_missing(BRFSS_selected)
+```
+
+Note: 47% of rows in the column POORHLTH is missing.
+The data need to be recoded. 
+
+```{r}
+library(pander)
+library(forcats)
+```
+
+
+***Record Identification*** (A)
+  A1. IYEAR
+  A2. IMONTH
+  A3. IDAY
+  A4. X_STATE
+
+**A1. IYEAR**
+```{r}
+BRFSS_selected  %>% 
+  group_by(IYEAR) %>% 
+  count() %>% 
+  pander
+```
+There are 18962 interviews in 2019. We are only interested in interviews in 2018. 
+There for, all the 2019 records will be eleminated.
+
+```{r}
+BRFSS_A1 <- BRFSS_selected %>% 
+  filter(IYEAR == 2018)
+```
+
+```{r}
+BRFSS_A1 <- subset(BRFSS_A1, select = -c(IYEAR))
+```  
+
+**A2-IMONTH**
+
+```{r}
+BRFSS_A1 %>% 
+  group_by(IMONTH) %>% 
+  count() %>% 
+  pander()
+```
+Note: Less interviews were done in January.
+Recoding 
+```{r}
+BRFSS_A2 <- BRFSS_A1 %>% 
+  mutate(MONTH = case_when(
+    IMONTH == "01" ~ "Jan",
+    IMONTH == "02" ~ "Fev",
+    IMONTH == "03" ~ "Mar",
+    IMONTH == "04" ~ "Apr",
+    IMONTH == "05" ~ "May",
+    IMONTH == "06" ~ "June",                
+    IMONTH == "07" ~ "July",
+    IMONTH == "08" ~ "Aug",
+    IMONTH == "09" ~ "Sept",
+    IMONTH == "10" ~ "Oct",
+    IMONTH == "11" ~ "Nov",
+    IMONTH == "12" ~ "Dec"))
+```
+Checking
+```{r}
+BRFSS_A2 %>% 
+  group_by(MONTH) %>%
+  count() %>% 
+  pander()
+```
+
+The result appears in the alphabetic order. 
+Now, we have to reorder these levels.
+
+```{r}
+BRFSS_A2$MONTH <- factor(BRFSS_A2$MONTH,
+                      levels = c("Jan", "Fev", "Mar", "Apr", 
+                                 "May", "June", "July", "Aug",
+                                 "Sept", "Oct", "Nov", "Dec"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_A2 %>% 
+  group_by(MONTH) %>%
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_A2 <- subset(BRFSS_A2, select = -c(IMONTH))
+```
+
+**A3. IDAY **
+```{r}
+BRFSS_A2 %>% 
+  group_by(IDAY) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_A3 <- BRFSS_A2
+```
+
+**Demographics** (B)
+B1. X_AGEG5YR 
+B2. SEX1 Respondents Sex
+B3. X_RACE 
+B4. MARITAL Marital Status
+B5. EDUCA Education Level
+B6. EMPLOY1 Employment Status
+B7. INCOME1 Income Level
+
+**B1. X_AGEG5YR ** ---> AGE
+```{r}
+BRFSS_A3%>% 
+  group_by(X_AGEG5YR) %>% 
+  count() %>% 
+  pander()
+```
+There are 14 categories (Please look at the data dictionary for the description of each value/label). The label 14 is Don't know/Refused/Missing (1.94%).
+
+We will regroup the first 13 rows into 7 groups.
+
+```{r}
+BRFSS_B1 <- BRFSS_A2 %>% 
+  filter(X_AGEG5YR < 14) %>% 
+  mutate(AGE = case_when(
+    X_AGEG5YR == 1 ~ "18-29",
+    X_AGEG5YR == 2 ~ "18-29",
+    X_AGEG5YR == 3 ~ "30-39",
+    X_AGEG5YR == 4 ~ "30-39",
+    X_AGEG5YR == 5 ~ "40-49",
+    X_AGEG5YR == 6 ~ "40-49",                
+    X_AGEG5YR == 7 ~ "50-59",
+    X_AGEG5YR == 8 ~ "50-59",
+    X_AGEG5YR == 9 ~ "60-69",
+    X_AGEG5YR == 10 ~ "60-69",
+    X_AGEG5YR == 11 ~ "70-79",
+    X_AGEG5YR == 12 ~ "70-79",
+    X_AGEG5YR == 13 ~ "80+"))
+```
+Note: Function recode does not work
+
+```{r}
+BRFSS_B1 %>% 
+  group_by(AGE) %>% 
+  count() %>% 
+  pander()
+```
+
+Removing the column X_AGEG5YR
+```{r}
+BRFSS_B1 <- subset(BRFSS_B1, select = -c(X_AGEG5YR))
+```
+
+**B2. SEX1** ---> GENDER
+```{r}
+BRFSS_B1 %>% 
+  group_by(SEX1) %>% 
+  count()
+```
+For the SEX attribute, we exclude any values of 7 (Don't know/Not Sure, 0.093% of data) and 9 (refused, 0.089 % of data). Also, we change the column name into GENDER. (401/428964 = 0.093)
+
+```{r}
+BRFSS_B2 <- BRFSS_B1 %>% 
+  filter(SEX1 == 1 | SEX1 == 2) %>% 
+  mutate(GENDER = case_when(
+    SEX1 == 1 ~ "Male",
+    SEX1 == 2 ~ "Female"))
+```
+Checking
+```{r}
+BRFSS_B2 %>% 
+  group_by(GENDER) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B2 <- subset(BRFSS_B2, select = -c(SEX1))
+```
+
+**B3. X_RACE** ---> RACE
+
+```{r}
+BRFSS_B2 %>% 
+  group_by(X_RACE) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B3 <- BRFSS_B2 %>% 
+  filter(X_RACE < 9 ) %>% 
+  mutate(RACE = case_when(
+    X_RACE == 1 ~ "White",
+    X_RACE == 2 ~ "Black",
+    X_RACE == 3 ~ "AIAN",
+    X_RACE == 4 ~ "Asian",
+    X_RACE == 5 ~ "Others",
+    X_RACE == 6 ~ "Others",                
+    X_RACE == 7 ~ "Others",
+    X_RACE == 8 ~ "Hispanic"))
+```
+
+```{r}
+BRFSS_B3 %>% 
+  group_by(RACE) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B3$RACE <- factor(BRFSS_B3$RACE,
+                      levels = c("AIAN",
+                                 "Asian",
+                                 "Black",
+                                 "Hispanic",
+                                 "White",
+                                 "Others"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_B3  %>% 
+  group_by(RACE) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B3 <- subset(BRFSS_B3, select = -c(X_RACE))
+```
+
+**B4. MARITAL** attribute
+
+```{r}
+BRFSS_B3 %>% 
+  group_by(MARITAL) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B4 <- BRFSS_B3 %>% 
+  filter(MARITAL < 9) %>% 
+  mutate(
+    RELP = case_when(
+     MARITAL == 1 ~ "In relationship",
+     MARITAL == 6 ~ "In relationship",
+     MARITAL == 2 ~ "Living apart",
+     MARITAL == 4 ~ "Living apart",
+     MARITAL == 3 ~ "Widowed",
+     MARITAL == 5 ~ "Never married")
+    )
+```
+
+Checking
+```{r}
+BRFSS_B4 %>% 
+  group_by(RELP) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B4$RELP <- factor(BRFSS_B4$RELP,
+                      levels = c("In relationship",
+                                 "Living apart",
+                                 "Never married",
+                                 "Widowed"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_B4 %>% 
+  group_by(RELP) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B4 <- subset(BRFSS_B4, select = -c(MARITAL))
+```
+
+**B5. EDUCA attribute** ===> EDU
+
+```{r}
+BRFSS_B4 %>% 
+  group_by(EDUCA) %>% 
+  count()
+```
+
+```{r}
+BRFSS_B5 <- BRFSS_B4 %>%
+  filter(EDUCA < 9) %>% 
+  mutate(EDU = case_when(
+           EDUCA == 1 ~ "<8",
+           EDUCA == 2 ~ "<8",
+           EDUCA == 3 ~ "9-12",
+           EDUCA == 4 ~ "9-12",
+           EDUCA == 5 ~ "12-15",
+           EDUCA == 6 ~ "16+"))
+```
+
+```{r}
+BRFSS_B5 %>% 
+  group_by(EDU) %>% 
+  count()
+```
+
+
+```{r}
+BRFSS_B5$EDU <- factor(BRFSS_B5$EDU,
+                      levels = c("<8",
+                                 "9-12",
+                                 "12-15",
+                                 "16+"), ordered = TRUE)
+```
+
+
+```{r}
+BRFSS_B5 %>% 
+  group_by(EDU) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B5 <- subset(BRFSS_B5, select = -c(EDUCA))
+```
+
+**B6. EMPLOY1** ===> EMPL
+Looking at Employment and age.
+
+```{r}
+BRFSS_B5 %>% 
+  group_by(EMPLOY1) %>% 
+  count()
+```
+The category Refused (9) represente 2380/400892 = 0.59% of the total number of respondents
+
+
+BRFSS_B6 <- BRFSS_B5 %>% 
+  filter(EMPLOY1 < 9) %>% 
+  mutate(EMPL = case_when(
+    EMPLOY1 == 1 ~ "Employed",
+    EMPLOY1 == 2 ~ "Self-employed",
+    EMPLOY1 == 3 ~ "Out of work",
+    EMPLOY1 == 4 ~ "Out of work",
+    EMPLOY1 == 5 ~ "Homemaker",
+    EMPLOY1 == 6 ~ "Student",
+    EMPLOY1 == 7 ~ "Retired",
+    EMPLOY1 == 8 ~ "Unable to work"))
+    
+```{r}  
+BRFSS_B6 <- BRFSS_B5 %>% 
+  filter(EMPLOY1 < 9) %>% 
+  mutate(EMPL = case_when(
+    EMPLOY1 == 1 ~ "Employed",
+    EMPLOY1 == 2 ~ "Employed",
+    EMPLOY1 == 3 ~ "Unemployed",
+    EMPLOY1 == 4 ~ "Unemployed",
+    EMPLOY1 == 5 ~ "Occupations",
+    EMPLOY1 == 6 ~ "Occupations",
+    EMPLOY1 == 7 ~ "Retired",
+    EMPLOY1 == 8 ~ "Unemployed"))
+```   
+
+occupation  : studen and homemakers
+
+Checking
+```{r}
+BRFSS_B6 %>% 
+  group_by(EMPL) %>% 
+  count()
+```
+
+```{r}
+BRFSS_B6$EMPL <- factor(BRFSS_B6$EMPL,
+                      levels = c("Employed",
+                                 "Unemployed",
+                                 "Retired",
+                                 "Occupations"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_B6 %>% 
+  group_by(EMPL) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B6 <- subset(BRFSS_B6, select = -c(EMPLOY1))
+```
+
+B7. INCOME2 attribute
+
+```{r}
+BRFSS_B6 %>% 
+  group_by(INCOME2) %>% 
+  count()
+```
+77 - Don’t know/Not sure
+99 - Refused
+
+```{r}
+BRFSS_B7 <- BRFSS_B6 %>%
+  filter(INCOME2 < 77) %>% 
+  mutate(INCOME = case_when(
+    INCOME2 == 1 ~ "<$20K",
+    INCOME2 == 2 ~ "<$20K",
+    INCOME2 == 3 ~ "<$20K",
+    INCOME2 == 4 ~ "$20K-<$35K",
+    INCOME2 == 5 ~ "$20K-<$35K",
+    INCOME2 == 6 ~ "$35K-<$50K",
+    INCOME2 == 7 ~ "$50K-<$75K",
+    INCOME2 == 8 ~ "$75K+"))
+```
+
+```{r}
+BRFSS_B7 %>% 
+  group_by(INCOME) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B7$INCOME <- factor(BRFSS_B7$INCOME,
+                      levels = c("<$20K",
+                                 "$20K-<$35K",
+                                 "$35K-<$50K",
+                                 "$50K-<$75K",
+                                 "$75K+"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_B7 %>% 
+  group_by(INCOME) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B7 <- subset(BRFSS_B7, select = -c(INCOME2))
+```
+
+**B8. RENTHOM1** ==> RENTHOME
+Do you own or rent your home?
+
+```{r}
+BRFSS_B7 %>% 
+  group_by(RENTHOM1) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B8 <- BRFSS_B7 %>%
+  filter(RENTHOM1 <= 3) %>% 
+  mutate(RENTHOME = case_when(
+    RENTHOM1 == 1 ~ "Own",
+    RENTHOM1 == 2 ~ "Rent",
+    RENTHOM1 == 3 ~ "Other"))
+```
+
+```{r}
+BRFSS_B8 %>% 
+  group_by(RENTHOME) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_B8 <- subset(BRFSS_B8, select = -c(RENTHOM1))
+```
+
+
+***Urban Rural*** (C)
+**C1. _METSTAT**
+**C2. X_URBSTAT**  ---> Community
+
+```{r}
+BRFSS_B8 %>% 
+  group_by(X_METSTAT) %>% 
+  count()
+```
+3663 records:  Not define or missing
+
+```{r}
+BRFSS_B8 %>% 
+  group_by(X_URBSTAT) %>% 
+  count()
+```
+
+```{r}
+BRFSS_C1 <- BRFSS_B8 %>% 
+  filter(X_METSTAT == 1 | X_METSTAT == 2|X_URBSTAT== 1 | X_URBSTAT == 2) %>% 
+  mutate(COMMUN = case_when(
+    X_METSTAT == 1 & X_URBSTAT == 1 ~ "Urban",
+    X_METSTAT == 2 & X_URBSTAT == 1 ~ "Suburban",
+    X_URBSTAT == 2 ~ "Rural" ))
+```
+
+
+```{r}
+BRFSS_C1 %>% 
+  group_by(COMMUN) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_C1 <- subset(BRFSS_C1, select = -c(X_METSTAT, X_URBSTAT))
+```
+
+
+***D.Lifestyle***
+  D1. X_SMOKER3 Four-level smoker status:  Everyday smoker, Someday smoker, Former smoker, Non-smoker
+  D2. ALCDAY5 Days in past 30 had alcoholic beverage
+  D3. SLEPTIM1 How Much Time Do You Sleep
+  D4. EXERANY2 Exercise in Past 30 Days 
+
+
+**D1. X_SMOKER3** ===> SMOKESTAT
+```{r}
+BRFSS_C1 %>% 
+ group_by(X_SMOKER3) %>% 
+  count()
+```
+
+```{r}
+BRFSS_D1 <- BRFSS_C1 %>% 
+  filter(X_SMOKER3 < 9) %>% 
+  mutate(SMOKESTAT = case_when(
+    X_SMOKER3 == 1 ~ "Daily smoker",
+    X_SMOKER3 == 2 ~ "Someday smoker",
+    X_SMOKER3 == 3 ~ "Former smoker",
+    X_SMOKER3 == 4 ~ "Never smoker"
+  ))
+```
+
+```{r}
+BRFSS_D1 %>% 
+  group_by(SMOKESTAT) %>% 
+  count() %>% 
+  pander()
+```
+
+Columns need to be reordered.
+```{r}
+BRFSS_D1$SMOKESTAT <- factor(BRFSS_D1$SMOKESTAT,
+                      levels = c("Daily smoker",
+                                 "Someday smoker",
+                                 "Former smoker",
+                                 "Never smoker"), ordered = TRUE)
+```
+
+```{r}
+BRFSS_D1 %>% 
+  group_by(SMOKESTAT) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_D1 <- subset(BRFSS_D1, select = -c(X_SMOKER3))
+```
+
+
+**D2. ALCDAY5**
+Should we create  only  two levels:  drinker and non-drinker ? weakly drinker
+How many drink per week you have
+
+```{r}
+BRFSS_D1 %>% 
+  group_by(ALCDAY5) %>% 
+  count() %>% 
+  pander()
+```
+
+Collect only monthly drinker
+888 :  no drink
+
+
+Here we need to change the values of the rows. According to the data dictionary, value 1__ = days per week, and value of 2__ =days in the past 30 days. This is the number of days people drink (at least one) per day and per week. We change all the data related to drinking weekly to monthly. Example 101 -> 204 102 -> 208 103 -> 212 etc…
+All the rows that values are less than 777 are valid. It should be noted thatThe code 888 means that no drink it the past 30 days. These rows must be included in the data as 0 drink.
+
+```{r}
+BRFSS_D2 <- BRFSS_D1 %>% 
+  filter(ALCDAY5 < 777 | ALCDAY5 == 888) %>% 
+  mutate(ALC = case_when(
+    ALCDAY5 == 888 ~ 200,
+    ALCDAY5 == 101 ~ 204,
+    ALCDAY5 == 102 ~ 208,
+    ALCDAY5 == 103 ~ 212,
+    ALCDAY5 == 104 ~ 216,
+    ALCDAY5 == 105 ~ 220,
+    ALCDAY5 == 106 ~ 224,
+    ALCDAY5 == 107 ~ 228,
+    ALCDAY5 == 201 ~ 201,
+    ALCDAY5 == 202 ~ 202,
+    ALCDAY5 == 203 ~ 203,
+    ALCDAY5 == 204 ~ 204,
+    ALCDAY5 == 205 ~ 205,
+    ALCDAY5 == 206 ~ 206,
+    ALCDAY5 == 207 ~ 207,
+    ALCDAY5 == 208 ~ 208,
+    ALCDAY5 == 209 ~ 209,
+    ALCDAY5 == 210 ~ 210,
+    ALCDAY5 == 211 ~ 211,
+    ALCDAY5 == 212 ~ 212,
+    ALCDAY5 == 213 ~ 213,
+    ALCDAY5 == 214 ~ 214,
+    ALCDAY5 == 215 ~ 215,
+    ALCDAY5 == 216 ~ 216,
+    ALCDAY5 == 217 ~ 207,
+    ALCDAY5 == 218 ~ 218,
+    ALCDAY5 == 219 ~ 219,
+    ALCDAY5 == 220 ~ 220,
+    ALCDAY5 == 221 ~ 221,
+    ALCDAY5 == 222 ~ 222,
+    ALCDAY5 == 223 ~ 223,
+    ALCDAY5 == 224 ~ 224,
+    ALCDAY5 == 225 ~ 225,
+    ALCDAY5 == 226 ~ 226,
+    ALCDAY5 == 227 ~ 227,
+    ALCDAY5 == 228 ~ 228,
+    ALCDAY5 == 229 ~ 229,
+    ALCDAY5 == 230 ~ 230))
+```
+
+```{r}
+BRFSS_D2 %>%
+  group_by(ALC) %>% 
+  count()
+```
+Now we need to subtract the value of the whole column by 200
+
+```{r}
+BRFSS_D2a <- BRFSS_D2 %>% 
+  mutate(ALCMONTH = ALC - 200)
+
+BRFSS_D2a %>%
+  group_by(ALCMONTH) %>% 
+  count()
+```
+
+```{r}
+ggplot(data = BRFSS_D2a, aes(ALCMONTH)) + 
+  geom_bar(stat= "count", 
+                 fill= "blue", 
+                 alpha = .75) + 
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of days",
+        y = "Frequency",
+        subtitle = "How many days per month did you have at least one drink during the past 30 days?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 150000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-1, 31), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 16),
+       axis.title = element_text(size = 12,face="bold"),
+       plot.title = element_text(color = "blue", size = 16, face = "bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 12),
+       plot.caption = element_text(color = "grey",size = 16, face = "italic")
+)
+```
+
+
+```{r}
+BRFSS_D2b <-  BRFSS_D2a %>% 
+  mutate(ALCpa30 = if_else(ALCMONTH == 0, "0", 
+                           if_else(ALCMONTH >= 1 & ALCMONTH < 10, "1-9","10-30")))
+```
+
+
+```{r}
+BRFSS_D2b %>% 
+  group_by(ALCpa30) %>% 
+  count() %>% 
+  pander()
+
+```
+
+```{r}
+BRFSS_D2b <- subset(BRFSS_D2b, select = -c(ALCDAY5, ALC, ALCMONTH))
+```
+
+D3. SLEPTIM1 (Numeric variable)
+On average, how many hours of sleep do you get in a 24-hour period?
+
+```{r}
+BRFSS_D2b %>% 
+  group_by(SLEPTIM1) %>% 
+  count()
+```
+
+The categories IDK/INS (77) ans refused (99) counts for (3552+270)/389181 = 0.98 % of data == > remove
+
+```{r}
+BRFSS_D3 <- BRFSS_D2b %>% 
+  filter(SLEPTIM1 < 77)
+```
+
+```{r}
+BRFSS_D3 %>% 
+  group_by(SLEPTIM1) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_D3 %>% 
+  filter(SLEPTIM1 > 13) %>% 
+  count()
+```
+This number represent 1033/317573 = 0.32%
+
+```{r}
+BRFSS_D3 %>% 
+  filter(SLEPTIM1 < 4) %>% 
+  count()
+```
+This number represent 3791/317573 = 1.19% of respondents.
+
+```{r, fig.height= 7.5, fig.width= 10}
+ggplot(data = BRFSS_D3, aes(SLEPTIM1)) + 
+  geom_bar(stat= "count", 
+                 fill= "blue", 
+                 alpha = .75) +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of hours",
+        y = "Frequency",
+        subtitle = "On average, how many hours of sleep do you get in a 24-hour period?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 100000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-1, 25), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 18),
+       axis.title = element_text(size =18 ,face="bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 18),
+       plot.caption = element_text(color = "grey",size = 18, face = "italic")
+)
+```
+
+```{r, fig.height= 5, fig.width= 5}
+boxplot(BRFSS_D3$SLEPTIM1,
+        ylim= c(0,30),
+        names = c("days"),
+        col = c("blue"),
+        ylab = "Duration (hours)", 
+        border = c("red"),
+        boxwex = 0.5)
+```
+
+Removing all the record where pp sleep more than 12h and less than 3 hours
+
+```{r}
+BRFSS_D3a <- BRFSS_D3 %>% 
+  filter(SLEPTIM1 < 13 & SLEPTIM1 > 2)
+```
+
+```{r, fig.height= 5, fig.width= 5}
+boxplot(BRFSS_D3a$SLEPTIM1,
+        ylim= c(0,30),
+        names = c("days"),
+        col = c("blue"),
+        main = "Distribution of sleep duration", 
+        ylab = "Duration (s)", 
+        border = c("red"),
+        boxwex = 0.5)
+```
+
+```{r, fig.height= 5, fig.width= 7.5}
+ggplot(data = BRFSS_D3a, aes(SLEPTIM1)) + 
+  geom_bar(stat= "count", 
+                 fill= "blue", 
+                 alpha = .75) +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of hours",
+        y = "Frequency",
+        subtitle = "On average, how many hours of sleep do you get in a 24-hour period?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 100000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 15), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 12),
+       axis.title = element_text(size = ,face="bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 12),
+       plot.caption = element_text(color = "grey",size = 12, face = "italic")
+)
+```
+
+```{r}
+BRFSS_D3a %>% 
+  summarise(mean_slepduratrion =  mean(SLEPTIM1),
+            median_sleepduration = median(SLEPTIM1),
+            sd_sleepduration =  sd(SLEPTIM1))
+```
+
+Testing the normal distribution
+
+```{r}
+qqnorm(BRFSS_D3a$SLEPTIM1, pch = 1, frame = FALSE)
+qqline(BRFSS_D3a$SLEPTIM1, col = "steelblue", lwd = 2)
+```
+
+
+```{r, fig.height= 5, fig.width= 7.5}
+ggplot(BRFSS_D3a, aes(x=SLEPTIM1)) + 
+  geom_histogram(binwidth = 1,
+                 color = "blue", 
+                 fill = "white") +
+  geom_vline(aes(xintercept = mean(SLEPTIM1)),
+             color = "red", 
+             linetype = "dashed",
+             size = 1) +
+  labs(x = "Number of hours",
+       y = "Frequency",
+       subtitle = "On average, how many hours of sleep do you get in a 24-hour period?",
+       caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 110000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 15), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size =14),
+       axis.title = element_text(size = ,face="bold"),
+       plot.title = element_text(color = "blue", size = 14, face = "bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 14),
+       plot.caption = element_text(color = "grey",size = 14, face = "italic")
+)
+```
+
+
+**D4. EXERANY2**
+Exercise in Past 30 Days 
+
+```{r}
+BRFSS_D3a %>% 
+  group_by(EXERANY2) %>% 
+  count()
+```
+
+The categories IDK/INS (77) ans refused (99) counts for (40+227)/314891 = 0.12 % of data 
+==> remove
+
+```{r}
+BRFSS_D4 <- BRFSS_D3a %>% 
+  filter(EXERANY2 == 1 | EXERANY2 == 2) %>% 
+  mutate(EXERpa30 = case_when(
+    EXERANY2 == 1 ~ "Yes",
+    EXERANY2 == 2 ~ "No"
+    ))
+```
+
+```{r}
+BRFSS_D4 %>% 
+  group_by(EXERpa30) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_D4 <- subset(BRFSS_D4, select = -c(EXERANY2))
+```
+
+
+**E.Health Status**
+
+E1. GENHLTH
+
+```{r}
+BRFSS_E1 <- BRFSS_D4  %>% 
+  filter(GENHLTH < 7) 
+
+BRFSS_E1$GENHLTH[BRFSS_E1$GENHLTH == 1] <- "Excellent"
+BRFSS_E1$GENHLTH[BRFSS_E1$GENHLTH == 2] <- "Very Good"
+BRFSS_E1$GENHLTH[BRFSS_E1$GENHLTH == 3] <- "Good"
+BRFSS_E1$GENHLTH[BRFSS_E1$GENHLTH == 4] <- "Fair"
+BRFSS_E1$GENHLTH[BRFSS_E1$GENHLTH == 5] <- "Poor"
+```
+
+```{r}
+BRFSS_E1 %>%
+  group_by(GENHLTH) %>% 
+  count()
+```
+
+```{r}
+BRFSS_E1$GENHLTH <- factor(BRFSS_E1$GENHLTH,
+                                levels =  c("Poor",
+                                            "Fair",
+                                            "Good",
+                                            "Very Good",
+                                            "Excellent"), ordered = TRUE)
+```
+
+
+```{r}
+BRFSS_E1 %>%
+  group_by(GENHLTH) %>% 
+  count() %>% 
+  pander()
+```
+
+
+**F.Healthy Days (Health Related Quality of Life, HRQL)**
+F1. PHYSHLTH (Number of Days Physical Health Not Good)
+F2. MENTHLTH (Number of Days Mental Health Not Good)
+F3. POORHLTH (Poor Physical or Mental Health)- note 205475 recored are missing
+
+
+E1. PHYSHLTH
+Now thinking about your physical health, which includes physical illness and injury, for how many days during the past 30 days was your physical health not good?
+
+```{r}
+BRFSS_E1 %>% 
+  group_by(PHYSHLTH) %>% 
+  count()
+```
+
+```{r}
+BRFSS_F1 <- BRFSS_E1 %>% 
+  filter(PHYSHLTH < 77 | PHYSHLTH == 88)
+```
+
+```{r}
+BRFSS_F1$PHYSHLTH[BRFSS_F1$PHYSHLTH == 88] <- 0
+```
+
+```{r}
+BRFSS_F1 %>% 
+  group_by(PHYSHLTH) %>% 
+  count()
+```
+
+```{r, fig.height= 7.5, fig.width= 12.5}
+ggplot(data = BRFSS_F1, aes(PHYSHLTH)) + 
+  geom_bar(stat= "count", 
+                 fill= "purple", 
+                 alpha = .75) +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of days",
+        y = "Frequency",
+        subtitle = "How many days during the past 30 days was your physical health not good?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 200000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-1, 31), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 18),
+       axis.title = element_text(size = ,face="bold"),
+       plot.caption = element_text(color = "grey",size = 18, face = "italic")
+)
+```
+Once again, 10, 15, 20 and 30 seems to be a magic number (as we have seen in the drinking varaible ALC5)
+
+```{r}
+boxplot(BRFSS_F1$PHYSHLTH,
+        ylim= c(0,30),
+        names = c("days"),
+        col = c("blue"),
+        main = "Distribution of days", 
+        ylab = "Duration (s)", 
+        border = c("red"),
+        boxwex = 0.5)
+```
+
+regrouping
+
+```{r}
+BRFSS_F1a <-  BRFSS_F1 %>% 
+  mutate(PHYSHLTHpa30 = if_else(PHYSHLTH == 0, "0", 
+                           if_else(PHYSHLTH >= 1 & PHYSHLTH < 10, "1-9","10-30")))
+```
+
+```{r}
+BRFSS_F1a %>% 
+  group_by(PHYSHLTHpa30) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_F1a <- subset(BRFSS_F1a, select = -c(PHYSHLTH))
+```
+
+**F2. MENTHLTH** 
+(Number of Days Mental Health Not Good)
+Now thinking about your mental health, which includes stress, depression, and problems with emotions, for how many days during the past 30 days was your mental health not good?
+
+```{r}
+BRFSS_F1a %>% 
+  group_by(MENTHLTH) %>% 
+  count()
+```
+
+```{r}
+BRFSS_F2 <- BRFSS_F1a %>%
+  filter(MENTHLTH < 77 | MENTHLTH == 88)
+```
+Converting  88 to 0 
+```{r}
+BRFSS_F2$MENTHLTH[BRFSS_F2$MENTHLTH == 88] <- 0
+```
+
+Checking
+```{r}
+BRFSS_F2 %>% 
+  group_by(MENTHLTH) %>% 
+  count()
+```
+
+```{r, fig.height= 7.5, fig.width= 12.5}
+ggplot(data = BRFSS_F2, aes(MENTHLTH)) + 
+  geom_bar(stat= "count", 
+                 fill= "red", 
+                 alpha = .75) +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of days",
+        y = "Frequency",
+        subtitle = "How many days during the past 30 days was your mental health not good?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 250000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(-1, 31), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 18),
+       plot.title = element_text(color = "blue", size = 20, face = "bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 18),
+       plot.caption = element_text(color = "grey",size = 18, face = "italic")
+)
+```
+
+```{r, fig.height= 7.5, fig.width= 12.5}
+ggplot(data = BRFSS_F2, aes(MENTHLTH)) + 
+  geom_bar(stat= "count", 
+                 fill= "red", 
+                 alpha = .75) +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Number of days",
+        y = "Frequency",
+        subtitle = "How many days during the past 30 days was your mental health not good?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 20000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(1, 31), expand = c(0, 0)) +
+  theme(
+       axis.text = element_text(size = 18),
+       plot.title = element_text(color = "blue", size = 20, face = "bold"),
+       plot.subtitle = element_text(color = "navyblue", size = 18),
+       plot.caption = element_text(color = "grey",size = 18, face = "italic")
+)
+```
+Regrouping
+
+```{r}
+BRFSS_F2a <-  BRFSS_F2 %>% 
+  mutate(MENTHLTHpa30 = if_else(MENTHLTH == 0, "0", 
+                           if_else(MENTHLTH >= 1 & MENTHLTH < 10, "1-9","10-30")))
+```
+
+```{r}
+BRFSS_F2a %>% 
+  group_by(MENTHLTHpa30) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_F2a <- subset(BRFSS_F2a, select = -c(MENTHLTH))
+```
+
+**F3. POORHLTH**
+```{r}
+BRFSS_F2a %>% 
+  group_by(POORHLTH) %>% 
+  count()
+```
+
+```{r}
+sum(is.na(BRFSS_F2a$POORHLTH))
+```
+We should not use this attribute.
+
+```{r}
+BRFSS_F2a <- subset(BRFSS_F2a, select = -c(POORHLTH))
+```
+
+**G. Health Care Access**
+  G1. HLTHPLN1 (Have any health care coverage)
+  G2. MEDCOST (Could Not See Doctor Because of Cost)
+  G3. CHECKUP1  
+
+**G1. HLTHPLN1 **
+(Have any health care coverage) ---> HLTHPLN
+
+```{r}
+BRFSS_F2a %>% 
+  group_by(HLTHPLN1) %>% 
+  count()
+```
+
+
+```{r}
+BRFSS_G1 <- BRFSS_F2a %>% 
+  filter(HLTHPLN1 == 1 | HLTHPLN1 == 2) %>% 
+  mutate(HLTHPLN = case_when(
+    HLTHPLN1 == 1 ~ "Yes",
+    HLTHPLN1 == 2 ~ "No"))
+```
+
+```{r}
+BRFSS_G1 %>% 
+  group_by(HLTHPLN) %>% 
+  count()
+```
+
+```{r}
+BRFSS_G1 <- subset(BRFSS_G1, select = -c(HLTHPLN1))
+```
+
+**G2.MEDCOST**
+(Could Not See Doctor Because of Cost) ---> MEDICOST
+
+```{r}
+BRFSS_G1 %>% 
+  group_by(MEDCOST) %>% 
+  count()
+```
+
+```{r}
+BRFSS_G2 <- BRFSS_G1 %>% 
+  filter(MEDCOST == 1 | MEDCOST == 2) %>% 
+  mutate(MEDICOST= case_when(
+    MEDCOST == 1 ~ "Yes",
+    MEDCOST == 2 ~ "No"))
+```
+
+```{r}
+BRFSS_G2 %>% 
+  group_by(MEDICOST) %>% 
+  count()
+```
+
+```{r}
+BRFSS_G2 <- subset(BRFSS_G2, select = -c(MEDCOST))
+```
+
+**G3. CHECKUP1**
+---> CHECKUP
+
+```{r}
+BRFSS_G2 %>% 
+  group_by(CHECKUP1) %>% 
+  count()
+```
+
+```{r}
+BRFSS_G3 <- BRFSS_G2 %>% 
+  filter(CHECKUP1 < 5 | CHECKUP1 == 8) %>% 
+  mutate(CHECKUP = case_when(CHECKUP1 == 1 ~ "<1",
+                             CHECKUP1 == 2 ~ "1-<2",
+                             CHECKUP1 == 3 ~ "2-<5",
+                             CHECKUP1 == 4 ~ "5+",
+                             CHECKUP1 == 8 ~ "5+"
+                             ))
+```
+
+```{r}
+BRFSS_G3%>% 
+  group_by(CHECKUP) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_G3 <- subset(BRFSS_G3, select = -c(CHECKUP1))
+```
+
+**Chronic Health Conditions** (G)
+H1. ASTHMA3
+H2. CHCCOPD1 (Ever told) you have chronic obstructive pulmonary disease, emphysema or chronic bronchitis?
+H3. HAVARTH3 Told Have Arthritis
+H4. ADDEPEV2 Ever told you had a depressive disorder
+H5. CHCKDNY1 (Ever told) you have kidney disease? 
+H6. DIABETE3 (Ever told) you have diabetes)
+H7A. CHCSCNCR (Ever told) you had skin cancer? YES/NO
+H7B. CHCOCNCR (Ever told) you had any other types of cancer? YES/NO 
+H8. CVDSTRK3 
+
+**H1. ASTHMA3**
+---> ASTHMA
+```{r}
+BRFSS_G3 %>% 
+  group_by(ASTHMA3) %>% 
+  count() %>% 
+  pander
+```
+
+```{r}
+BRFSS_H1 <- BRFSS_G3 %>%
+  filter(ASTHMA3 < 7) %>% 
+  mutate(ASTHMA = case_when(
+    ASTHMA3 == 1 ~ "Yes",
+    ASTHMA3 == 2 ~ "No"))
+```
+
+```{r}
+BRFSS_H1  %>% 
+  group_by(ASTHMA) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_H1 <- subset(BRFSS_H1, select = -c(ASTHMA3))
+```
+
+
+**H2. CHCCOPD1**
+---> PULMOND
+
+```{r}
+BRFSS_H1 %>% 
+  group_by(CHCCOPD1) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H2 <- BRFSS_H1 %>% 
+  filter(CHCCOPD1 < 7) %>% 
+  mutate(PULMOND = case_when(CHCCOPD1 == 1 ~ "Yes",
+                             CHCCOPD1 == 2 ~ "No"))
+```
+
+```{r}
+BRFSS_H2 <- subset(BRFSS_H2, select = -c(CHCCOPD1))
+```
+
+H3. HAVARTH3 
+Told Have Arthritis ---> ARTHRITIS
+ARTHRITIS
+(Ever told) you have some form of arthritis, rheumatoid arthritis, gout, lupus, or fibromyalgia? (Arthritis diagnoses include: rheumatism, polymyalgia rheumatica; osteoarthritis (not osteporosis); tendonitis, bursitis, bunion, tennis elbow; carpal tunnel syndrome, tarsal tunnel syndrome; joint infection, etc.)
+
+```{r}
+BRFSS_H2 %>% 
+  group_by(HAVARTH3) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H3 <- BRFSS_H2 %>%
+  filter(HAVARTH3 < 7) %>% 
+  mutate(ARTHRITIS = case_when(
+    HAVARTH3 == 1 ~ "Yes",
+    HAVARTH3 == 2 ~ "No"
+  ))
+```
+
+
+```{r}
+BRFSS_H3 %>% 
+  group_by(ARTHRITIS) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_H3 <- subset(BRFSS_H3, select = -c(HAVARTH3))
+```
+
+**H4. ADDEPEV2**
+Ever told you had a depressive disorder ---> DEPRESSION
+
+```{r}
+BRFSS_H3 %>% 
+  group_by(ADDEPEV2) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H4 <- BRFSS_H3 %>% 
+  filter(ADDEPEV2 < 7) %>% 
+  mutate(DEPRESSION = case_when(ADDEPEV2 == 1 ~ "Yes",
+                                ADDEPEV2 == 2 ~ "No"))
+```
+
+
+```{r}
+BRFSS_H4  %>% 
+  group_by(DEPRESSION) %>% 
+  count() %>% 
+  pander ()
+```
+
+```{r}
+BRFSS_H4 <- subset(BRFSS_H4, select = -c(ADDEPEV2))
+```
+
+
+**H5. CHCKDNY1**
+(Ever told) you have kidney disease? ---> KIDNEY
+
+```{r}
+BRFSS_H4 %>% 
+  group_by(CHCKDNY1) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H5 <- BRFSS_H4 %>% 
+  filter(CHCKDNY1 < 7) %>% 
+  mutate(KIDNEY = case_when(CHCKDNY1 == 1 ~ "Yes",
+                            CHCKDNY1 == 2 ~ "No"))
+```
+
+```{r}
+BRFSS_H5 %>% 
+  group_by(KIDNEY) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_H5  <- subset(BRFSS_H5, select = -c(CHCKDNY1))
+```
+
+
+**H6. DIABETE3**
+(Ever told) you have diabetes) ---> DIABETE
+
+```{r}
+BRFSS_H5 %>% 
+  group_by(DIABETE3) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H6 <- BRFSS_H5 %>% 
+  filter(DIABETE3 < 7) %>% 
+  mutate(DIABETE = case_when(
+    (DIABETE3 == 1 | DIABETE3 == 2) ~ "Yes",
+    (DIABETE3 == 3 | DIABETE3 == 4) ~ "No"
+  ))
+```
+
+```{r}
+BRFSS_H6 %>% 
+  group_by(DIABETE) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H6 <- subset(BRFSS_H6, select = -c(DIABETE3))
+```
+
+G7.  CHCSCNCR + CHCOCNCR ---> CANCER
+CHCSCNCR (Ever told) you had skin cancer? YES/NO
+CHCOCNCR (Ever told) you had any other types of cancer? YES/NO 
+ 
+```{r}
+BRFSS_H6 %>% 
+  group_by(CHCSCNCR) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H6 %>% 
+  group_by(CHCOCNCR) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H7 <- BRFSS_H6 %>%
+  filter(CHCSCNCR < 7 & CHCOCNCR < 7) %>% 
+  mutate(CANCER =  case_when(
+    CHCSCNCR == 1 & CHCOCNCR == 1 ~ "Yes",
+    CHCSCNCR == 1 & CHCOCNCR == 2 ~ "Yes",
+    CHCSCNCR == 2 & CHCOCNCR == 1 ~ "Yes",
+    CHCSCNCR == 2 & CHCOCNCR == 2 ~ "No"
+  ))
+```
+
+```{r}
+BRFSS_H7 %>% 
+  group_by(CANCER) %>% 
+  count() %>% 
+  pander()
+```
+(So far) There are 16.92 % of respondents who have at least one cancer.
+
+```{r}
+BRFSS_H7 <- subset(BRFSS_H7, select = -c(CHCSCNCR,CHCOCNCR))
+```
+
+
+
+H8.CVDSTRK3 (Ever told) you had a stroke
+
+```{r}
+BRFSS_H7 %>% 
+  group_by(CVDSTRK3) %>% 
+  count()
+```
+
+```{r}
+BRFSS_H8 <- BRFSS_H7 %>%
+  filter(CVDSTRK3 < 7) %>% 
+  mutate(STROKE =  case_when(
+    CVDSTRK3  == 1 ~ "Yes",
+    CVDSTRK3  == 2 ~ "No"
+  ))
+```
+
+```{r}
+BRFSS_H8 %>% 
+  group_by(STROKE) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_H8 <- subset(BRFSS_H8, select = -c(CVDSTRK3))
+```
+
+
+**I. Oral Health** 
+I1.LASTDEN4 (Last Visited Dentist or Dental Clinic)
+I2.RMVTETH4 (Number of Permanent Teeth Removed)
+
+I1. RMVTETH4 --->  RMVTETH
+Not including teeth lost for injury or orthodontics, how many of your permanent teeth have been removed because of tooth decay or gum disease?
+
+```{r}
+BRFSS_H8 %>% 
+  group_by(RMVTETH4) %>% 
+  count()
+```
+The category "Refused" has 299 records ==> removed these records
+
+```{r}
+BRFSS_I1 <- BRFSS_H8 %>% 
+  filter(RMVTETH4 == 8 | RMVTETH4 < 4) %>% 
+  mutate(RMVTETH = case_when(
+    RMVTETH4 == 1 ~ "1-5",
+    RMVTETH4 == 2 ~ ">= 6",
+    RMVTETH4 == 3 ~ "All",
+    RMVTETH4 == 8 ~ "0"
+  ))
+```
+
+```{r}
+BRFSS_I1 %>% 
+  group_by(RMVTETH) %>%
+  count()
+```
+
+```{r}
+BRFSS_I1$RMVTETH <- factor(BRFSS_I1$RMVTETH,
+  levels= c("0",
+            "1-5",
+            ">= 6",
+            "All"), ordered = TRUE)
+
+BRFSS_I1%>% 
+  group_by(RMVTETH) %>%
+  count() %>% 
+  pander()
+
+
+BRFSS_I1 <- subset(BRFSS_I1, select = -c(RMVTETH4))
+```
+
+
+I2. LASTDEN4
+
+```{r}
+BRFSS_I1 %>% 
+  group_by(LASTDEN4) %>%
+  count()
+```
+
+
+```{r}
+BRFSS_I2 <- BRFSS_I1 %>% 
+  filter(LASTDEN4 < 7| LASTDEN4 == 8) %>% 
+  mutate(LASTDENTV = case_when(
+    LASTDEN4 == 1 ~ "<1",
+    LASTDEN4 == 2 ~ "1-<2",
+    LASTDEN4 == 3 ~ "2-<5",
+    LASTDEN4 == 4 ~ "5+",
+    LASTDEN4 == 8 ~ "5+"
+  ))
+
+
+BRFSS_I2 %>% 
+  group_by(LASTDENTV) %>% 
+  count()
+
+
+BRFSS_I2$LASTDENTV <- factor(BRFSS_I2$LASTDENTV,
+                                levels =  c("<1",
+                                            "1-<2",
+                                            "2-<5",
+                                            "5+"), ordered = TRUE)
+BRFSS_I2%>% 
+  group_by(LASTDENTV) %>% 
+  count() %>% 
+  pander()
+
+
+BRFSS_I2 <- subset(BRFSS_I2, select = -c(LASTDEN4))
+```
+
+
+***J. Obesity*** 
+
+**J1. X_BMI5CAT**
+---> BMICAT
+
+Four-categories of Body Mass Index (BMI) 
+1 = underweight, 2 = normal, 3 = overweight, 4 = obese, null = missing.
+
+```{r}
+BRFSS_I2 %>% 
+  group_by(X_BMI5CAT) %>% 
+  count()
+
+```
+
+
+```{r}
+BRFSS_J1 <- BRFSS_I2 %>% 
+  filter(X_BMI5CAT < 5) %>% 
+  mutate (BMICAT = case_when(X_BMI5CAT == 1 ~ "Underweight",
+                          X_BMI5CAT == 2 ~ "Normal",
+                          X_BMI5CAT == 3 ~ "Overweight",
+                          X_BMI5CAT == 4 ~ "Obese"))
+```
+
+
+```{r}
+BRFSS_J1 %>% 
+  group_by(BMICAT) %>% 
+  count() %>% 
+  pander()
+```
+
+
+```{r}
+BRFSS_J1$BMICAT <- factor(BRFSS_J1$BMICAT,
+                                levels =  c("Underweight",
+                                            "Normal",
+                                            "Overweight",
+                                            "Obese"), ordered = TRUE)
+
+```
+
+
+```{r}
+BRFSS_J1 %>% 
+  group_by(BMICAT) %>% 
+  count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS_J1 <- subset(BRFSS_J1, select = -c(X_BMI5CAT))
+```
+
+
+***MICHD (Outcome) (K)***
+K. X_MICHD 
+The outcome ---> MICHD
+
+```{r}
+BRFSS_J1  %>% 
+  group_by(X_MICHD) %>% 
+  count()
+```
+
+```{r}
+BRFSS_K <- BRFSS_J1 %>% 
+  filter(X_MICHD < 3) %>% 
+  mutate(MICHD =  case_when(X_MICHD == 1 ~ "Yes",
+                            X_MICHD == 2 ~ "No"))
+```
+
+
+```{r}
+BRFSS_K %>% 
+  group_by(MICHD) %>% 
+  count() %>% 
+  pander()
+```
+
+24713/(24713+255253) = 8.8% 
+
+```{r}
+BRFSS_K <- subset(BRFSS_K, select = -c(X_MICHD))
+```
+
+```{r}
+str(BRFSS_K)
+```
+
+
+Merging with table states
+
+```{r}
+getwd()
+```
+
+```{r}
+statesUS <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/state-geocodes-v2015.csv", header=TRUE, sep=",")
+```
+
+```{r}
+str(statesUS)
+```
+
+```{r}
+colnames(statesUS)
+```
+
+
+```{r}
+joined_BRFSS <- left_join(BRFSS_K, statesUS, 
+              by = c("X_STATE" = "ï..FIPS"))
+```
+
+```{r}
+str(joined_BRFSS)
+```
+
+```{r}
+joined_BRFSS <- subset(joined_BRFSS, select = -c(X_STATE))
+joined_BRFSS <- subset(joined_BRFSS, select = -c(Name))
+```
+
+```{r}
+colnames(joined_BRFSS)
+```
+
+```{r}
+joined_BRFSS <- joined_BRFSS %>% 
+  dplyr::select(IDAY,MONTH, Region, 
+         AGE, GENDER, RACE, RELP, EDU,EMPL,INCOME,RENTHOME, COMMUN,
+         ALCpa30, SMOKESTAT, EXERpa30, SLEPTIM1,
+         GENHLTH, 
+         MENTHLTHpa30, PHYSHLTHpa30, 
+         HLTHPLN, CHECKUP, MEDICOST,
+         ARTHRITIS,ASTHMA,CANCER,DEPRESSION, DIABETE,KIDNEY,PULMOND, STROKE, 
+         LASTDENTV,RMVTETH,
+         BMICAT,
+         MICHD) 
+```
+
+```{r}
+str(joined_BRFSS)
+```
+
+```{r}
+write.csv(joined_BRFSS,file = "BRFSS2018-V3.csv", row.names= FALSE)
+```
+
+
+
+
+

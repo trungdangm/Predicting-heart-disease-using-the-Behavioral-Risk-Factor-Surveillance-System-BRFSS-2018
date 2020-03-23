@@ -1,0 +1,4311 @@
+---
+title: "CKME136-Part 2-Univariate and bivariate analysis-(14-03-2020)"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggpol)
+library(DataExplorer)
+library(knitr)
+library(corrplot)
+library(scales)
+```
+
+```{r}
+getwd()
+```
+
+```{r}
+BRFSS <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS2018-V3.csv", header = TRUE, sep = ",")
+```
+
+```{r, fig.height= 4, fig.width= 10}
+plot_intro(BRFSS)
+```
+
+```{r}
+str(BRFSS)
+```
+No missing observations
+
+
+***Buidling Table 1 ***
+
+*The outcome (MICHD)*
+
+```{r}
+MICHDFreq <- table(BRFSS$MICHD)
+MICHDFreq
+prop.table(MICHDFreq)
+```
+
+```{r}
+library(gtools)
+```
+
+Using defmacro to define the macro
+```{r}
+FreqTbl <- defmacro(OutputTable, InputVar, CSVTable, 
+                    expr = {
+                    OutputTable <- table(InputVar);
+                    write.csv(OutputTable, file = paste0(CSVTable, ".csv"))
+                           }
+                    )
+```
+
+
+```{r}
+#Record Identification*** (A)
+FreqTbl (REGIONFreq, BRFSS$Region, "A1-Region")
+FreqTbl (MONTHFreq, BRFSS$MONTH, "A2-MONTH")
+FreqTbl (DAYFreq, BRFSS$IDAY, "A3-IDAY")
+
+#Demographics** (B)
+FreqTbl (AGEFreq, BRFSS$AGE, "B1-AGE")
+FreqTbl (GENDERFreq, BRFSS$GENDER, "B2-GENDER")
+FreqTbl (RACEFreq, BRFSS$RACE, "B3-RACE")
+FreqTbl (RELPFreq, BRFSS$RELP, "B4-RELP")
+FreqTbl (EDUFreq, BRFSS$EDU, "B5-EDUCATION")
+FreqTbl (EMPLOYMENTFreq, BRFSS$EMPL, "B6-EMPLOYMENT")
+FreqTbl (INCOMEFreq, BRFSS$INCOME, "B7-INCOME")
+FreqTbl (RENTHOMEFreq, BRFSS$RENTHOME, "B8-RENTHOME")
+FreqTbl (COMMUNFreq, BRFSS$COMMUN, "J1-COMMUN")
+
+
+#Lifestyle** (C)
+FreqTbl (SMOKINGFreq, BRFSS$SMOKESTAT, "C1-SMOKESTAT")
+FreqTbl (ALCpa30Freq, BRFSS$ALCpa30, "C2-ALCpa30")
+FreqTbl (SLEPTIM1Freq, BRFSS$SLEPTIM1 , "C3-SLEPTIM1")
+FreqTbl (EXERCISEFreq, BRFSS$EXERpa30 , "C4-EXERpa30")
+
+#Health Status** (D)
+FreqTbl (GENHLTHFreq, BRFSS$GENHLTH, "D1-GENHLTH")
+
+#Healthy Days** (E)— Health Related Quality of Life 
+FreqTbl (MENTHLTHpa30Freq, BRFSS$MENTHLTHpa30, "E2-MENTHLTHpa30")
+FreqTbl (PHYSHLTHpa30Freq, BRFSS$PHYSHLTHpa30, "E1-PHYSHLTHpa30")
+
+# **Health Care Access** (F)
+FreqTbl (HLTHPLNFreq, BRFSS$HLTHPLN, "F1-HLTHPLN")
+FreqTbl (MEDICOSTFreq, BRFSS$MEDICOST, "F2-MEDCOST")
+FreqTbl (CHECKUPFreq, BRFSS$CHECKUP, "F3-CHECKUP")
+
+#**Chronic Health Conditions** (G)
+FreqTbl (ASTHMAFreq, BRFSS$ASTHMA , "G1-ASTHMA")
+FreqTbl (PULMONDFreq, BRFSS$PULMOND, "G2-PULMOND")
+FreqTbl (ARTHRITISFreq, BRFSS$ARTHRITIS, "G3-ARTHRITIS")
+FreqTbl (DEPRESSIONFreq, BRFSS$DEPRESSION, "G4-DEPRESSION")
+FreqTbl (KIDNEYFreq, BRFSS$KIDNEY, "G5-KIDNEY")
+FreqTbl (DIABETEFreq, BRFSS$DIABETE, "G6-DIABETE")
+FreqTbl (CANCERFreq, BRFSS$CANCER, "G7-CANCER")
+FreqTbl (STROKEFreq, BRFSS$STROKE, "G8-STROKE")
+
+#**Oral Health** (H)
+FreqTbl (RMVTETHFreq, BRFSS$RMVTETH, "H1-RMVTETH")
+FreqTbl (LASTDENFreq, BRFSS$LASTDENTV, "H2-LASTDENTV")
+
+#**OBISITY** (I)
+FreqTbl (BMICATFreq, BRFSS$BMICAT, "I1-BMICAT")
+
+# The response varaiable
+FreqTbl (MICHDFreq, BRFSS$MICHD, "K-MICHD")
+
+```
+
+```{r}
+BRFSS_Y <- BRFSS %>% 
+  filter(MICHD == "Yes")
+```
+
+```{r}
+#Record Identification*** (A)
+FreqTbl (REGION_YFreq, BRFSS_Y$Region, "A1-Region_Y")
+FreqTbl (MONTH_YFreq, BRFSS_Y$MONTH, "A2-MONTH_Y")
+FreqTbl (DAY_YFreq, BRFSS_Y$IDAY, "A3-IDAY_Y")
+
+#Demographics** (B)
+FreqTbl (AGE_YFreq, BRFSS_Y$AGE, "B1-AGE_Y")
+FreqTbl (GENDER_YFreq, BRFSS_Y$GENDER, "B2-GENDER_Y")
+FreqTbl (RACE_YFreq, BRFSS_Y$RACE, "B3-RACE_Y")
+FreqTbl (RELP_YAFreq, BRFSS_Y$RELP, "B4-RELP_Y")
+FreqTbl (EDU_YFreq, BRFSS_Y$EDU, "B5-EDUCATION_Y")
+FreqTbl (EMPLOYMENT_YFreq, BRFSS_Y$EMPL, "B6-EMPLOYMENT_Y")
+FreqTbl (INCOME_YFreq, BRFSS_Y$INCOME, "B7-INCOME_Y")
+FreqTbl (RENTHOME_YFreq, BRFSS_Y$RENTHOME, "B8-RENTHOME_Y")
+FreqTbl (COMMUN_YFreq, BRFSS_Y$COMMUN, "J1-COMMUN")
+
+#Lifestyle** (C)
+FreqTbl (SMOKING_YFreq, BRFSS_Y$SMOKESTAT, "C1-SMOKESTAT_Y")
+FreqTbl (DRINKING_YFreq, BRFSS_Y$ALCpa30, "C2-ALCpa30_Y")
+FreqTbl (SLEPTIM1_YFreq, BRFSS_Y$SLEPTIM1 , "C3-SLEPTIM1_Y")
+FreqTbl (EXERCISE_YFreq, BRFSS_Y$EXERpa30 , "C4-EXERpa30_Y")
+
+#Health Status** (D)
+FreqTbl (GENHLTH_YFreq, BRFSS_Y$GENHLTH, "D1-GENHLTH_Y")
+
+#Healthy Days** (E)— Health Related Quality of Life 
+FreqTbl (MENTHLTHpa30_YFreq, BRFSS_Y$MENTHLTHpa30, "E2-MENTHLTHpa30_Y")
+FreqTbl (PHYSHLTHpa30_YFreq, BRFSS_Y$PHYSHLTHpa30, "E1-PHYSHLTHpa30_Y")
+
+# **Health Care Access** (F)
+FreqTbl (HLTHPLN_YFreq, BRFSS_Y$HLTHPLN, "F1-HLTHPLN_Y")
+FreqTbl (MEDICOST_YFreq, BRFSS_Y$MEDICOST, "F2-MEDCOST_Y")
+FreqTbl (CHECKUP_YFreq, BRFSS_Y$CHECKUP, "F3-CHECKUP_Y")
+
+#**Chronic Health Conditions** (G)
+FreqTbl (ASTHMA_YFreq, BRFSS_Y$ASTHMA , "G1-ASTHMA_Y")
+FreqTbl (PULMOND_YFreq, BRFSS_Y$PULMOND, "G2-PULMOND_Y")
+FreqTbl (ARTHRITIS_YFreq, BRFSS_Y$ARTHRITIS, "G3-ARTHRITIS_Y")
+FreqTbl (DEPRESSION_YFreq, BRFSS_Y$DEPRESSION, "G4-DEPRESSION_Y")
+FreqTbl (KIDNEY_YFreq, BRFSS_Y$KIDNEY, "G5-KIDNEY_Y")
+FreqTbl (DIABETE_YFreq, BRFSS_Y$DIABETE, "G6-DIABETE_Y")
+FreqTbl (CANCER_YFreq, BRFSS_Y$CANCER, "G7-CANCER_Y")
+FreqTbl (STROKE_YFreq, BRFSS$STROKE, "G8-STROKE_Y")
+
+
+#**Oral Health** (H)
+FreqTbl (RMVTETH_YFreq, BRFSS_Y$RMVTETH, "H1-RMVTETH_Y")
+FreqTbl (LASTDEN_YFreq, BRFSS_Y$LASTDENTV, "H2-LASTDENTV_Y")
+
+#**OBISITY** (I)
+FreqTbl (BMICAT_YFreq, BRFSS_Y$BMICAT, "I1-BMICAT_Y")
+
+# The response varaiable
+FreqTbl (MICHD_YFreq, BRFSS_Y$MICHD, "K-MICHD_Y")
+
+```
+
+```{r}
+BRFSS_N <- BRFSS %>% 
+  filter(MICHD == "No")
+```
+
+```{r}
+#Record Identification*** (A)
+FreqTbl (REGION_NFreq, BRFSS_N$Region, "A1-Region_N")
+FreqTbl (MONTH_NFreq, BRFSS_N$MONTH, "A2-MONTH_N")
+FreqTbl (DAY_NFreq, BRFSS_N$IDAY, "A3-IDAY_N")
+
+#Demographics** (B)
+FreqTbl (AGE_NFreq, BRFSS_N$AGE, "B1-AGE_N")
+FreqTbl (GENDER_NFreq, BRFSS_N$GENDER, "B2-GENDER_N")
+FreqTbl (RACE_NFreq, BRFSS_N$RACE, "B3-RACE_N")
+FreqTbl (RELP_NAFreq, BRFSS_N$RELP, "B4-RELP_N")
+FreqTbl (EDU_NFreq, BRFSS_N$EDU, "B5-EDUCATION_N")
+FreqTbl (EMPLOYMENT_NFreq, BRFSS_N$EMPL, "B6-EMPLOYMENT_N")
+FreqTbl (INCOME_NFreq, BRFSS_N$INCOME, "B7-INCOME_N")
+FreqTbl (RENTHOME_NFreq, BRFSS_N$RENTHOME, "B8-RENTHOME_N")
+FreqTbl (COMMUN_NFreq, BRFSS_N$COMMUN, "J1-COMMUN_N")
+
+
+#Lifestyle** (C)
+FreqTbl (SMOKING_NFreq, BRFSS_N$SMOKESTAT, "C1-SMOKESTAT_N")
+FreqTbl (DRINKING_NFreq, BRFSS_N$ALCpa30, "C2-ALCpa30_N")
+FreqTbl (SLEPTIM1_NFreq, BRFSS_N$SLEPTIM1 , "C3-SLEPTIM1_N")
+FreqTbl (EXERCISE_NFreq, BRFSS_N$EXERpa30 , "C4-EXERpa30_N")
+
+#Health Status** (D)
+FreqTbl (GENHLTH_NFreq, BRFSS_N$GENHLTH, "D1.GENHLTH_N")
+
+#Healthy Days** (E)— Health Related Quality of Life 
+FreqTbl (MENTHLTHpa30_NFreq, BRFSS_N$MENTHLTHpa30, "E2-MENTHLTHpa30_N")
+FreqTbl (PHYSHLTHpa30_NFreq, BRFSS_N$PHYSHLTHpa30, "E1-PHYSHLTHpa30_N")
+
+#Health Care Access** (F)
+FreqTbl (HLTHPLN_NFreq, BRFSS_N$HLTHPLN, "F1-HLTHPLN_N")
+FreqTbl (MEDICOST_NFreq, BRFSS_N$MEDICOST, "F2-MEDCOST_N")
+FreqTbl (CHECKUP_NFreq, BRFSS_N$CHECKUP, "F3-CHECKUP_N")
+
+#Chronic Health Conditions** (G)
+FreqTbl (ASTHMA_NFreq, BRFSS_N$ASTHMA , "G1-ASTHMA_N")
+FreqTbl (PULMOND_NFreq, BRFSS_N$PULMOND, "G2-PULMOND_N")
+FreqTbl (ARTHRITIS_NFreq, BRFSS_N$ARTHRITIS, "G3-ARTHRITIS_N")
+FreqTbl (DEPRESSION_NFreq, BRFSS_N$DEPRESSION, "G4-DEPRESSION_N")
+FreqTbl (KIDNEY_NFreq, BRFSS_N$KIDNEY, "G5-KIDNEY_N")
+FreqTbl (DIABETE_NFreq, BRFSS_N$DIABETE, "G6-DIABETE_N")
+FreqTbl (CANCER_NFreq, BRFSS_N$CANCER, "G7-CANCER_N")
+FreqTbl (STROKE_NFreq, BRFSS$STROKE, "G8-STROKE_N")
+
+#Oral Health** (H)
+FreqTbl (RMVTETH_NFreq, BRFSS_N$RMVTETH, "H1-RMVTETH_N")
+FreqTbl (LASTDEN_NFreq, BRFSS_N$LASTDENTV, "H2-LASTDENTV_N")
+
+#OBISITY** (I)
+FreqTbl (BMICAT_NFreq, BRFSS_N$BMICAT, "I1-BMICAT_N")
+
+#The response varaiable
+FreqTbl (MICHD_NFreq, BRFSS_N$MICHD, "K-MICHD_N")
+```
+
+```{r}
+library(ggridges)
+library(ggplot2)
+```
+
+**1.2. Building Proportion Tables**
+Example
+```{r}
+MICHFreq <- table(BRFSS$MICHD)
+MICHFreq
+prop.table(MICHFreq)
+```
+
+Using defmacro to define the macro 
+```{r}
+PropTbl <- defmacro(OutputTable, InputVar, CSVTable, 
+                    expr = {
+                    FreqTable <- table(InputVar)  
+                    OutputTable <- prop.table(FreqTable);
+                    write.csv(OutputTable, file = paste0(CSVTable, ".csv"))
+                           }
+                    )
+```
+
+```{r}
+#Record Identification*** (A)
+PropTbl (REGION_PrFreq, BRFSS$Region, "A1-STATES_Pr")
+PropTbl (MONTH_PrFreq, BRFSS$MONTH, "A2-MONTH_Pr")
+PropTbl (DAY_PrFreq, BRFSS$IDAY, "A3-IDAY_Pr")
+
+#Demographics** (B)
+PropTbl (AGE_PrFreq, BRFSS$AGE, "B1-AGE_Pr")
+PropTbl (GENDER_PrFreq, BRFSS$GENDER, "B2-GENDER_Pr")
+PropTbl (RACE_PrFreq, BRFSS$RACE, "B3-RACE_Pr")
+PropTbl (RELP_PrAFreq, BRFSS$RELP, "B4-RELP_Pr")
+PropTbl (EDU_PrFreq, BRFSS$EDU, "B5-EDUCATION_Pr")
+PropTbl (EMPLOYMENT_PrFreq, BRFSS$EMPL, "B6-EMPLOYMENT_Pr")
+PropTbl (INCOME_PrFreq, BRFSS$INCOME, "B7-INCOME_Pr")
+PropTbl (RENTHOME_PrFreq, BRFSS$RENTHOME, "B8-RENTHOME_Pr")
+PropTbl (COMMUN_PrFreq, BRFSS$COMMUN, "J1-COMMUN_Pr")
+
+#Lifestyle** (C)
+PropTbl (SMOKING_PrFreq, BRFSS$SMOKESTAT, "C1-SMOKESTAT_Pr")
+PropTbl (DRINKING_PrFreq, BRFSS$ALCpa30, "C2-ALCpa30_Pr")
+PropTbl (SLEPTIM1_PrFreq, BRFSS$SLEPTIM1 , "C3-SLEPTIM1_Pr")
+PropTbl (EXERCISE_PrFreq, BRFSS$EXERpa30 , "C4-EXERpa30_Pr")
+
+#Health Status** (D)
+PropTbl (GENHLTH_PrFreq, BRFSS$GENHLTH, "D1.GENHLTH_Pr")
+
+#Healthy Days** (E)— Health Related Quality of Life 
+PropTbl (MENTHLTHpa30_PrFreq, BRFSS$MENTHLTHpa30, "E2-MENTHLTHpa30_Pr")
+PropTbl (PHYSHLTHpa30_PrFreq, BRFSS$PHYSHLTHpa30, "E1-PHYSHLTHpa30_Pr")
+
+# **Health Care Access** (F)
+PropTbl (HLTHPLN_PrFreq, BRFSS$HLTHPLN, "F1-HLTHPLN_Pr")
+PropTbl (MEDICOST_PrFreq, BRFSS$MEDICOST, "F2-MEDCOST_Pr")
+PropTbl (CHECKUP_PrFreq, BRFSS$CHECKUP, "F3-CHECKUP_Pr")
+
+#**Chronic Health Conditions** (G)
+PropTbl (ASTHMA_PrFreq, BRFSS$ASTHMA , "G1-ASTHMA_Pr")
+PropTbl (PULMOND_PrFreq, BRFSS$PULMOND, "G2-PULMOND_Pr")
+PropTbl (ARTHRITIS_PrFreq, BRFSS$ARTHRITIS, "G3-ARTHRITIS_Pr")
+PropTbl (DEPRESSION_PrFreq, BRFSS$DEPRESSION, "G4-DEPRESSION_Pr")
+PropTbl (KIDNEY_PrFreq, BRFSS$KIDNEY, "G5-KIDNEY_Pr")
+PropTbl (DIABETE_PrFreq, BRFSS$DIABETE, "G6-DIABETE_Pr")
+PropTbl (CANCER_PrFreq, BRFSS$CANCER, "G7-CANCER_Pr")
+PropTbl (STROKE_PrFreq, BRFSS$STROKE, "G8-STROKE_Pr")
+
+
+#**Oral Health** (H)
+PropTbl (RMVTETH_PrFreq, BRFSS$RMVTETH, "H1-RMVTETH_Pr")
+PropTbl (LASTDEN_PrFreq, BRFSS$LASTDENTV, "H2-ASTDEN_Pr")
+
+#**OBISITY** (I)
+PropTbl (BMICAT_PrFreq, BRFSS$BMICAT, "I1-BMICAT_Pr")
+
+# The response varaiable
+PropTbl (MICHD_PrFreq, BRFSS$MICHD, "K-MICHD_Pr")
+```
+
+In order to obtaine the proportions across rows, we will use 'margin = 1' sums across rows.
+This way we will obtain the proportion of Yes/No for each row instead of total table
+
+```{r}
+PropTbl2 <- defmacro(OutputTable, InputVar1,InputVar2, CSVTable, 
+                    expr = {
+                    FreqTable <- table(InputVar1,InputVar2)  
+                    OutputTable <- prop.table(FreqTable, margin = 1);
+                    write.csv(OutputTable, file = paste0(CSVTable, ".csv"))
+                           }
+                    )
+```
+
+```{r}
+#Record Identification*** (A)
+PropTbl2 (REGION_Pr_RFreq, BRFSS$Region,BRFSS$MICHD, "A1-STATES_Pr_R")
+PropTbl2 (MONTH_Pr_RFreq, BRFSS$MONTH,BRFSS$MICHD, "A2-MONTH_Pr_R")
+PropTbl2 (DAY_Pr_RFreq, BRFSS$IDAY,BRFSS$MICHD, "A3-IDAY_Pr_R")
+
+#Demographics** (B)
+PropTbl2 (AGE_Pr_RFreq, BRFSS$AGE,BRFSS$MICHD, "B1-AGE_Pr_R")
+PropTbl2 (GENDER_Pr_RFreq, BRFSS$GENDER,BRFSS$MICHD, "B2-GENDER_Pr_R")
+PropTbl2 (RACE_Pr_RFreq, BRFSS$RACE,BRFSS$MICHD, "B3-RACE_Pr_R")
+PropTbl2 (RELP_Pr_RAFreq, BRFSS$RELP,BRFSS$MICHD, "B4-RELP_Pr_R")
+PropTbl2 (EDU_Pr_RFreq, BRFSS$EDU,BRFSS$MICHD, "B5-EDUCATION_Pr_R")
+PropTbl2 (EMPLOYMENT_Pr_RFreq, BRFSS$EMPL,BRFSS$MICHD, "B6-EMPLOYMENT_Pr_R")
+PropTbl2 (INCOME_Pr_RFreq, BRFSS$INCOME,BRFSS$MICHD, "B7-INCOME_Pr_R")
+PropTbl2 (RENTHOME_Pr_RFreq, BRFSS$RENTHOME, BRFSS$MICHD,"B8-RENTHOME_Pr_R")
+PropTbl2 (COMMUN_Pr_RFreq, BRFSS$COMMUN,BRFSS$MICHD, "J1-COMMUN_Pr_R")
+
+#Lifestyle** (C)
+PropTbl2 (SMOKING_Pr_RFreq, BRFSS$SMOKESTAT,BRFSS$MICHD, "C1-SMOKESTAT_Pr_R")
+PropTbl2 (DRINKING_Pr_RFreq, BRFSS$ALCpa30,BRFSS$MICHD, "C2-ALCpa30_Pr_R")
+PropTbl2 (SLEPTIM1_Pr_RFreq, BRFSS$SLEPTIM1,BRFSS$MICHD, "C3-SLEPTIM1_Pr_R")
+PropTbl2 (EXERCISE_Pr_RFreq, BRFSS$EXERpa30,BRFSS$MICHD, "C4-EXERpa30_Pr_R")
+
+#Health Status** (D)
+PropTbl2 (GENHLTH_Pr_RFreq, BRFSS$GENHLTH,BRFSS$MICHD, "D1.GENHLTH_Pr_R")
+
+#Healthy Days** (E)— Health Related Quality of Life 
+PropTbl2 (MENTHLTHpa30_Pr_RFreq, BRFSS$MENTHLTHpa30,BRFSS$MICHD, "E2-MENTHLTHpa30_Pr_R")
+PropTbl2 (PHYSHLTHpa30_Pr_RFreq, BRFSS$PHYSHLTHpa30,BRFSS$MICHD, "E1-PHYSHLTHpa30_Pr_R")
+
+# **Health Care Access** (F)
+PropTbl2 (HLTHPLN_Pr_RFreq, BRFSS$HLTHPLN,BRFSS$MICHD, "F1-HLTHPLN_Pr_R")
+PropTbl2 (MEDICOST_Pr_RFreq, BRFSS$MEDICOST,BRFSS$MICHD, "F2-MEDCOST_Pr_R")
+PropTbl2 (CHECKUP_Pr_RFreq, BRFSS$CHECKUP,BRFSS$MICHD, "F3-CHECKUP_Pr_R")
+
+#**Chronic Health Conditions** (G)
+PropTbl2 (ASTHMA_Pr_RFreq, BRFSS$ASTHMA,BRFSS$MICHD, "G1-ASTHMA_Pr_R")
+PropTbl2 (PULMOND_Pr_RFreq, BRFSS$PULMOND,BRFSS$MICHD, "G2-PULMOND_Pr_R")
+PropTbl2 (ARTHRITIS_Pr_RFreq, BRFSS$ARTHRITIS,BRFSS$MICHD, "G3-ARTHRITIS_Pr_R")
+PropTbl2 (DEPRESSION_Pr_RFreq, BRFSS$DEPRESSION,BRFSS$MICHD, "G4-DEPRESSION_Pr_R")
+PropTbl2 (KIDNEY_Pr_RFreq, BRFSS$KIDNEY,BRFSS$MICHD, "G5-KIDNEY_Pr_R")
+PropTbl2 (DIABETE_Pr_RFreq, BRFSS$DIABETE,BRFSS$MICHD, "G6-DIABETE_Pr_R")
+PropTbl2 (CANCER_Pr_RFreq, BRFSS$CANCER,BRFSS$MICHD, "G7-CANCER_Pr_R")
+PropTbl2 (STROKE_Pr_RFreq, BRFSS$STROKE,BRFSS$MICHD, "G7-STROKE_Pr_R")
+
+
+#**Oral Health** (H)
+PropTbl2 (RMVTETH_Pr_RFreq, BRFSS$RMVTETH,BRFSS$MICHD, "H1-RMVTETH_Pr_R")
+PropTbl2 (LASTDEN_Pr_RFreq, BRFSS$LASTDENTV,BRFSS$MICHD, "H2-ASTDEN_Pr_R")
+
+#**OBISITY** (I)
+PropTbl2 (BMICAT_Pr_RFreq, BRFSS$BMICAT,BRFSS$MICHD, "I1-BMICAT_Pr_R")
+
+```
+
+Checking the AGE attribute
+
+```{r}
+AGEFreq2 <- table(BRFSS$AGE, BRFSS$MICHD)
+AGEFreq2
+prop.table(AGEFreq2)
+prop.table(AGEFreq2, margin = 1)
+```
+
+2. Graphical data analysis
+
+```{r}
+library(scales)
+library(tidyverse)
+library(pander)
+```
+
+Defining some sets of color
+
+```{r}
+col2 <- c("#A9A9A9", "#FF8C00")
+col3 <- c("#003f5c", "#bc5090","#ffa600")
+col4 <- c("#FB6542","#3F681C","#4D585B", "#375E97")
+col5 <- c("#BD3E85","#3F681C","#FFBB00", "#FB6542", "#375E97")
+col6 <- c("#0072BB", "#FF4C3B","#FFD034","#51A39D","#06425C", "#C6C8CA")
+col7 <-  c("#0072BB", "#FF4C3B","#FFD034","#51A39D","#06425C", "#C6C8CA","#814374")
+```
+
+**The outcome (MICHD)**
+```{r, dpi = 300}
+df_MICHD <- BRFSS %>% 
+  group_by(MICHD) %>% 
+  dplyr::count() %>% 
+  ungroup()%>% 
+  arrange(desc(MICHD)) %>%
+  mutate(Percentage = round(n/sum(n),4)*100,
+         lab.pos = cumsum(Percentage)-0.5*Percentage)
+
+ggplot(data = df_MICHD, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = MICHD))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geom_text(aes(y = lab.pos, 
+                label = paste(Percentage,"%", sep = "")), 
+            col = "blue",
+            size = 6) +
+  theme_void() +
+  scale_fill_manual(values = col2)
+```
+
+***Region***
+```{r}
+library(treemapify)
+```
+
+```{r}
+BRFSS %>% 
+  group_by(Region) %>%
+  dplyr::count() %>% 
+  pander()
+```
+
+```{r, fig.height= 5,  fig.width= 6}
+df_region <- BRFSS %>% 
+  group_by(Region) %>% 
+  dplyr::count() %>% 
+  ungroup()%>% 
+  arrange(desc(Region)) %>%
+  mutate(percentage = round(n/sum(n),4)*100,
+         lab.pos = cumsum(percentage)-.5*percentage)
+
+ggplot(data = df_region, 
+       aes(x = "", 
+           y = percentage, 
+           fill = Region))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geom_text(aes(y = lab.pos, 
+                label = paste(percentage,"%", sep = "")), col = "white", size = 5) +
+  scale_fill_manual(values = col4) +
+  theme_void() +
+  theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14))
+```
+
+
+In 2018, the popolation of USA
+Northest 56 046 620 (17.2%)
+Midwest 68 236 628 (20.9%)
+West 77 834 820 (23.8%)
+South 124 569 433 (38.1%)
+
+Alternative chart
+```{r}
+library(waffle)
+```
+
+```{r}
+df_Region <- data.frame(
+  REGION = c("Midwest", "Northeast", "Sounth", "West"),
+  value = c(76268, 57288,83856, 62160))
+
+parts <- round(df_Region$value/sum(df_Region$value),2)*100
+
+parts2 <- c("Sounth" = (30),"Midwest" = (27),"Northeast" = (21), "West" = (22))
+```
+
+```{r, fig.height= 5, fig.width= 5}
+
+waffle(
+  parts2, rows = 10, size = 1,
+  colors = col4,
+  legend_pos = "bottom", 
+  xlab = ""
+)
+```
+
+***Demographics*** (B)
+  B1. AGE
+  B2. GENDER
+  B3. X_RACE 
+  B4. RELPT
+  B5. EDU
+  B6. EMPL
+  B7. INCOME1
+  B8. RENTHOME
+
+Defining theme and geomtext for all bar charts
+
+```{r}
+theme_bar <- theme(axis.text = element_text(size = 12),
+                   axis.title = element_text(size = 12, face = "bold"),
+                   plot.caption = element_text(color = "grey44",
+                                               size = 12,
+                                               face = "italic"),
+                   legend.text = element_text(colour="black", size = 12))
+
+geomtext_bar <- geom_text(aes(label = paste0(Percentage,"%")), 
+                               vjust = -0.3,
+                               size = 4,
+                               fontface = "bold") 
+
+
+theme_point <- theme(axis.text = element_text(size = 12, color = "black"),
+                    axis.title = element_text(size = 12, face = "bold"),
+                    plot.caption = element_text(color = "grey", size = 12, face = "italic"),
+                    legend.text = element_text(colour="black", size = 12),
+                    legend.position="right")
+
+
+themebar_stacked <-  theme(axis.text = element_text(size = 12, color = "black"),
+                           axis.title = element_text(size = 12, face = "bold"),
+                           plot.caption = element_text(color = "grey", size = 12, face = "italic"),
+                           legend.text = element_text(colour="black", size = 12),
+                           legend.position="right")
+
+themebar_facet <-   theme(axis.text = element_text(size = 12, color = "black"),
+        axis.title = element_text(size = 12, face= "bold"),
+        plot.title = element_text(color = "black", size = 12, face = "bold.italic"),
+        plot.caption = element_text(color = "grey", size = 12, face = "italic"),
+        strip.text = element_text(size = 12, color = "black", face = "bold.italic"),
+        strip.background = element_rect(fill = "slategray1"),
+        legend.text = element_text(colour="black", size = 20),
+        legend.position = "none")
+```
+
+
+**B1.AGE**
+```{r, fig.height= 5, fig.width= 5, dpi = 300}
+ggplot(BRFSS, aes(x = AGE)) +
+  geom_bar(aes(y = (..count..)/sum(..count..)),
+           fill = "royalblue4", 
+           width = 0.75) +
+  scale_y_continuous(labels = percent)+
+  geom_text(size = 4.5,
+            color= "black",
+            aes(y = ((..count..)/sum(..count..)),
+                label = scales::percent((..count..)/sum(..count..))),
+            stat = "count",
+            vjust = -0.3) +
+  labs(x = "Age group",
+       y = "Percent of respondents",
+       caption = "Data source: BRFSS2018") + 
+  theme_bar
+```
+Other way to make the same graph
+```{r}
+df_age <- BRFSS %>% 
+  group_by(AGE) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(Agegroup = factor(AGE),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_age
+```
+
+```{r, fig.height= 5, fig.width = 5, dpi = 300}
+ggplot(df_age, 
+       aes(x = AGE, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           fill = "royalblue4",
+           width = 0.80) +
+  geomtext_bar  +
+  labs(x = "Age group",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+For presentation
+```{r}
+library(ggimage)
+library(extrafont)
+```
+
+```{r, fig.width= 7.5}
+loadfonts(device = "win")
+
+df1_age <- data.frame(grp = c("18-29","30-39","40-49","50-59","60-69","70-79","80+"),
+                  y = 7:1, 
+                  img = rep("./man.png",7), 
+                  freq = c(10.52,12.32,13.71,19.05,22.61,15.30,6.48))
+
+df2_age <- df1_age[rep(seq_len(nrow(df1_age)), df1_age$freq), 1:3]
+
+df2_age <- df2_age %>% group_by(grp) %>% mutate(x = row_number())
+
+ggplot(df2_age) + 
+  geom_image(aes(x = x, 
+                 y = y, 
+                 image = img), 
+             size = 0.045) + 
+  theme_void() +
+  geom_text(data = df1_age, 
+            aes(y = y + 0.1, 
+                label = paste(freq,"%", sep = "")), 
+            x = 24,
+            fontface = 2, 
+            size = 4.5, 
+            color = "blue") +
+  geom_text(data = df1_age,
+            aes(y = y + 0.2,
+                label = grp), 
+            x = -0.3, 
+            fontface = 2, 
+            size = 4.5, 
+            color = "black") +
+  xlim(-1,max(df1_age$freq)+2) + 
+  ylim(0,max(df1_age$y)+1)
+```
+
+
+***B2. GENDER***
+```{r}
+tbl_gender <- table(BRFSS$GENDER)
+tbl_gender
+prop.table(tbl_gender)
+```
+
+For presentation
+```{r}
+library(png)
+library(plotly)
+```
+
+```{r}
+genderselection <- read.table(text="
+  Gender Freq
+     F   52
+     M   48
+", header=T)
+pcts <- round(prop.table(genderselection$Freq)*100)
+
+# Load png file with man and woman
+img <- readPNG("manfemale.png")
+h <- dim(img)[1]
+w <- dim(img)[2]
+
+# Find the rows where feet starts and head ends
+pos1 <- which(apply(img[,,1], 1, function(y) any(y==1)))
+mn1 <- min(pos1)
+mx1 <- max(pos1)
+pospctM <- round((mx1-mn1)*pcts[2]/100+mn1)
+pospctF <- round((mx1-mn1)*pcts[1]/100+mn1)
+
+# Fill bodies with a different color according to percentages
+imgmtx <- img[h:1,,1]
+whitemtx <- (imgmtx==1)
+colmtx <- matrix(rep(FALSE,h*w),nrow=h)
+midpt <- round(w/2)-10
+colmtx[mx1:pospctM,1:midpt] <- TRUE
+colmtx[mx1:pospctF,(midpt+1):w] <- TRUE
+imgmtx[whitemtx & colmtx] <- 0.5
+
+# Plot matrix using heatmap and print text
+labs <- c(paste0(pcts[2], "% Males"),paste0(pcts[1], "% Females"))
+ax <- list(ticks = '', 
+           showticklabels = FALSE, 
+           showgrid = FALSE, 
+           zeroline = FALSE)
+p <- plot_ly(z = imgmtx, 
+             showscale = FALSE, 
+             type = 'heatmap', 
+             width = 500,  
+             height = 500) %>%
+     add_text(x = c(100,250), y = c(20,20), type = 'heatmap', mode = "text",
+        text = labs, showlegend = FALSE, textfont = list(size = 20, color = "#FFFFFF"), inherit = FALSE) %>%
+     layout(xaxis = ax,  yaxis = ax)  
+p
+```
+
+***B3. RACE***
+Need to order levels
+```{r}
+BRFSS$RACE <- factor(BRFSS$RACE,
+                      levels = c("AIAN",
+                                 "Asian",
+                                 "Black",
+                                 "Hispanic",
+                                 "White",
+                                 "Others"), ordered = TRUE)
+```
+
+```{r}
+df_race <- BRFSS %>% 
+  group_by(RACE) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(Agegroup = factor(RACE),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_race
+```
+
+```{r, fig.height= 5, fig.width= 5}
+ggplot(df_race, 
+       aes(x = RACE, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "blue", 
+           fill = "royalblue4",
+           width = 0.75) +
+  geomtext_bar +
+  labs(x = "Race",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+The majority of participants are white, followed by black, with very few Asian or American Indians
+
+Alternative graphs
+```{r}
+library(treemapify)
+library(treemap)
+```
+
+```{r}
+plotdata2 <- BRFSS %>%
+  dplyr::count(RACE)
+
+ggplot(plotdata2, 
+       aes(fill = RACE, 
+           area = n,
+           label = RACE)) +
+  
+  geom_treemap() + 
+  geom_treemap_text(colour = "dark blue",
+                    place = "centre",
+                    fontface = "italic") +
+  labs(title = "Race of respondents") +
+  
+  scale_fill_brewer(palette = "RdYlBu")+
+  theme(legend.position = "none")
+```
+
+Regroup AIAN, Asian, Multiracial and other into a group OTHERs
+
+```{r}
+df2_race <- data.frame(
+  RACE = c("White", "Black","Hispanic", "Others"),
+  Percentage = c(78.96, 7.73, 6.69, 6.62))
+
+df3_race <- df2_race %>%
+  arrange(desc(RACE)) %>%
+  mutate(lab.pos = cumsum(Percentage),
+         centre =  lab.pos - 0.5*Percentage)
+
+ggplot(data = df3_race, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = RACE))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geom_text(aes(y = centre, 
+                label = paste(Percentage,"%", sep = "")), 
+            col = "white") +
+  theme_void() +
+  scale_fill_manual(values = col4)
+```
+
+```{r}
+library(ggforce) # for 'geom_arc_bar'
+```
+
+```{r}
+BRFSS %>% 
+  group_by(RACE) %>% 
+  dplyr::count()
+```
+
+
+```{r}
+df3_race <- data.frame(
+  RACE = c("White", "Black","Hispanic", "Others"),
+  Value = c(220761, 21602	, 18717, 18492))
+
+df3_race <- df3_race %>% 
+  mutate(end = 2 * pi * cumsum(Value)/sum(Value),
+         start = lag(end, default = 0),
+         middle = 0.5 * (start + end),
+         hjust = ifelse(middle > pi, 1, 0),
+         vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+
+df3_race$Label <- paste(round(((df3_race$Value/sum(df3_race$Value))*100),2),"%")
+
+ggplot(df3_race) + 
+  geom_arc_bar(aes(x0 = 0, 
+                   y0 = 0, 
+                   r0 = 0, 
+                   r = 1,
+                   start = start, 
+                   end = end, 
+                   fill = RACE)) +
+  scale_fill_manual(values = col4) +
+  geom_text(aes(x = 1.05 * sin(middle), 
+                y = 1.05 * cos(middle), 
+                label = Label,
+                hjust = hjust, 
+                vjust = vjust)) +
+  coord_fixed() +
+  scale_x_continuous(limits = c(-1.5, 1.5),  # Adjust so labels are not cut off
+                     name = "", breaks = NULL, labels = NULL) +
+  scale_y_continuous(limits = c(-1.25,1.25),      # Adjust so labels are not cut off
+                     name = "", breaks = NULL, labels = NULL)
+
+```
+
+```{r}
+df4_race <- BRFSS %>% 
+  group_by(RACE) %>% 
+  dplyr::count() %>% 
+  ungroup()%>% 
+  arrange(desc(RACE)) %>%
+  mutate(percentage = round(n/sum(n),4)*100,
+         lab.pos = cumsum(percentage)-.5*percentage)
+
+df4_race
+
+ggplot(data = df4_race, 
+       aes(x = "", y = percentage, fill = RACE))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  theme_void() +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+```{r}
+xRace <- c(78.96, 7.72, 6.69, 6.63)
+labels <- c("White", "Black","Hispanic", "Others")
+pct <- xRace/sum(xRace)*100
+lbls <- paste(labels, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+pie(xRace,labels = lbls, col= col4)
+```
+
+***B5. EDUCATION(EDU)***
+```{r}
+BRFSS$EDU <- factor(BRFSS$EDU,
+                      levels = c("<8",
+                                 "9-12",
+                                 "12-15",
+                                 "16+"), ordered = TRUE)    
+```
+      
+```{r}
+df_edu <- BRFSS %>% 
+  group_by(EDU) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(EDUgroup = factor(EDU),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_edu %>% 
+  pander()
+```
+
+```{r, fig.height= 5, fig.width= 5, dpi = 300}
+ggplot(df_edu, 
+       aes(x = EDU , 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "blue", 
+           fill = "royalblue4",
+           width = 0.5) +
+  geomtext_bar +
+  labs(x = "Years of education",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+(For presentaion)
+```{r}
+library(echarts4r)
+```
+
+```{r, fig.width= 5}
+df2_edu <- data.frame(
+  x = c("<8","9-12", "12-15", "16+"),
+  y = c(1.64, 29.41, 27.99, 40.95))
+
+df2_edu %>% 
+  e_charts(x) %>% 
+  e_pictorial(y, symbol = paste0("image://","https://1.bp.blogspot.com/-klwxpFekdEQ/XOubIhkalyI/AAAAAAAAHlE/25psl9x4oNkbJoLc2CKTXgV2pEj6tAvigCLcBGAs/s1600/pencil.png", size = 0.001)) %>%
+  e_theme("westeros") %>% 
+  e_labels(show = TRUE, postion = "top", fontSize = 20, color = "blue")%>%
+  e_legend(show = FALSE) %>%
+  e_x_axis(splitLine=list(show = FALSE,fontSize = 30)) %>%
+  e_y_axis(show=FALSE, splitLine=list(show = FALSE,fontSize = 20))
+```
+
+
+***B6. EMPLOYMENT***
+```{r}
+BRFSS %>% 
+  group_by(EMPL) %>% 
+  dplyr::count()
+```
+
+```{r}
+BRFSS$EMPL <- factor(BRFSS$EMPL,
+                      levels = c("Employed",
+                                 "Unemployed",
+                                 "Occupations",
+                                 "Retired"), ordered = TRUE)
+```
+Will be transform in a table
+
+```{r}
+tbl_empl <- table(BRFSS$EMPL)
+pro_tbl_empl <- prop.table(tbl_empl)
+pro_tbl_empl 
+```
+
+```{r}
+df_empl <- BRFSS %>% 
+  group_by(EMPL) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(EMPLgroup = factor(EMPL),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_empl %>% 
+  pander()
+```
+      
+```{r, fig.height= 5, fig.width= 5, dpi = 300}
+ggplot(df_empl, 
+       aes(x = EMPL, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "blue", 
+           fill = "royalblue4",
+           width = 0.5) +
+  geomtext_bar +
+  labs(x = "Employment status",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***B4. RELP (Relationship STATUS)***
+```{r}
+BRFSS %>% 
+  group_by(RELP) %>% 
+  dplyr::count()
+```
+
+```{r}
+BRFSS$RELP <- factor(BRFSS$RELP,
+                      levels = c("In relationship",
+                                 "Living apart",
+                                 "Never married",
+                                 "Widowed"), ordered = TRUE)
+```
+
+The table is maybe better 
+```{r}
+df_RELP <- BRFSS %>% 
+  group_by(RELP) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(RELPgroup = factor(RELP),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_RELP %>% 
+  pander()
+```
+
+```{r, fig.height= 5, fig.width= 5, dpi = 300}
+ggplot(df_RELP, 
+       aes(x = RELP, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "blue", 
+           fill = "royalblue4",
+           width = 0.5) +
+  geomtext_bar +
+  labs(x = "Relationship status",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***B5. INCOME (LEVELS of INCOME)***
+```{r}
+BRFSS$INCOME <- factor(BRFSS$INCOME,
+                      levels = c("<$20K",
+                                 "$20K-<$35K",
+                                 "$35K-<$50K",
+                                 "$50K-<$75K",
+                                 "$75K+"), ordered = TRUE)
+```
+
+```{r}
+df_income <- BRFSS %>% 
+  group_by(INCOME) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(Income_range = factor(INCOME),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+df_income %>% 
+  pander()
+```
+
+```{r, , fig.height= 5, fig.width = 6}
+ggplot(df_income, 
+       aes(x = INCOME, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "blue", 
+           fill = "royalblue4",
+           width = 0.5) +
+  geomtext_bar +
+  labs(x = "Income range",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+For presentation
+```{r}
+library(ggimage)
+library(extrafont)
+```
+
+```{r, fig.width= 7}
+loadfonts(device = "win")
+
+df1Income <- data.frame(grp = c("<$20K","$20K-<$35K","$35K-<$50K","$50K-<$75K","$75K+"),
+                  y = 5:1, 
+                  img = rep("./coin.jpg",5), 
+                  freq=c(14.32,18.44,13.83,16.86,36.56))
+
+df2Income<- df1Income[rep(seq_len(nrow(df1Income)), df1Income$freq), 1:3]
+
+df2Income <- df2Income %>% group_by(grp) %>% mutate(x = row_number())
+
+ggplot(df2Income) + 
+  geom_image(aes(x = x, 
+                 y = y, 
+                 image = img), size = 0.045) + 
+  theme_void() +
+  geom_text(data = df1Income, aes(y = y + 0.1, label=paste(freq,"%", sep = "")),  x= -0.5,fontface = 2, size = 4, color="blue") +
+  geom_text(data = df1Income, aes(y = y-.3, label = grp), x = 0.5, fontface = 2, size = 4, color="black") +
+  xlim(-1,max(df1Income$freq)+2) + ylim(0,max(df1Income$y)+1)
+```
+
+Examining the association between income and education level
+The question we'd like to answer is: is edcuaiton level related to revenue?
+
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x= EDU , group = INCOME)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col4) +
+    labs(y = "Percent of respondents", fill="INCOME") +
+    facet_grid(~ INCOME) +
+    scale_y_continuous(labels = scales::percent)+
+  labs(x = "Year of education",
+       y = "Percent of respondents",
+       caption = "Data source: BRFSS2018") +
+  themebar_facet
+```
+
+```{r}
+df_EduIncome <- BRFSS %>% 
+  group_by(EDU, INCOME) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df_EduIncome 
+```
+
+```{r}
+library(tidyverse)
+library(plyr)
+```
+
+```{r}
+df2_EduIncome <- ddply(df_EduIncome,.(INCOME),transform, Percentage = Count*100/sum(Count))
+df2_EduIncome 
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot( )+
+  geom_bar(data=df2_EduIncome, 
+           aes(x = INCOME, 
+               y = Percentage,
+               fill = EDU),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Salary Bracket") +
+  scale_fill_manual(values = col4) +
+  scale_y_continuous(breaks = seq(0, 100, 20)) +
+  themebar_stacked
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot(data=df2_EduIncome, aes(x = INCOME, 
+                           y = Percentage, 
+                           group = EDU)) +
+  geom_line(linetype = "dashed", 
+            aes(color = EDU), 
+            size = 0.5) +
+  geom_point(aes(color = EDU), 
+             size = 6) +
+  scale_color_manual(values = col4) +
+   labs(y = "Percent of respondents (%)", x = "Salary Bracket") +
+  theme_point +
+  guides(color=guide_legend("Year of education")) 
+```
+
+```{r, fig.height= 8, fig.width= 20}
+ggplot(BRFSS, aes(x= INCOME , group = EDU)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col5) +
+    labs(y = "Percent of respondents", fill = "INCOME") +
+    facet_grid(~ EDU) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+df3_EduIncome <- ddply(df_EduIncome,.(EDU),transform, Percentage = Count*100/sum(Count))
+df3_EduIncome 
+```
+
+```{r, fig.width= 6, fig.height= 5 }
+ggplot( )+
+  geom_bar(data=df3_EduIncome, 
+           aes(x = EDU, 
+               y = Percentage,
+               fill = INCOME),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Years of education") +
+  scale_fill_manual(values = col5) +
+  themebar_stacked 
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot(data=df3_EduIncome, aes(x = EDU, 
+                           y = Percentage, 
+                           group = INCOME)) +
+  geom_line(linetype = "dashed", 
+            aes(color = INCOME), 
+            size = 0.5) +
+  geom_point(aes(color = INCOME), 
+             size = 6) +
+  scale_color_manual(values = col5) +
+  labs(y = "Percent of respondents (%)", x = "Year of education") +
+  theme_point +
+  guides(color=guide_legend("Salary Bracket")) 
+```
+
+**GENDER and INCOME**
+```{r}
+df_GenderIncome <- BRFSS %>% 
+  group_by(GENDER, INCOME) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df_GenderIncome %>% 
+  pander()
+
+df2_GenderIncome <- ddply(df_GenderIncome,.(INCOME),transform, Percentage = Count*100/sum(Count))
+                      
+df2_GenderIncome <- df2_GenderIncome %>% 
+  mutate(pos = cumsum(Percentage) - (0.5 * Percentage))
+
+df2_GenderIncome %>% 
+  pander()
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot( )+
+  geom_bar(data = df2_GenderIncome, 
+           aes(x = INCOME, 
+               y = Percentage,
+               fill = GENDER),
+               stat = "identity") +
+   labs(y = "Percent of respondents (%)", 
+        x = "Salary Bracket") +
+  scale_fill_manual(values = col2) +
+  scale_y_continuous(breaks = seq(0, 100, 20)) +
+  themebar_stacked
+```
+It is hard to see the difference in this graph
+
+```{r, fig.height= 6, fig.width= 9}
+ggplot(BRFSS, aes(x= GENDER , 
+                  group = INCOME)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.75) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col2) +
+    labs(y = "Percent of respondents", fill="GENDER") +
+    facet_grid(~ INCOME) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot(data = df2_GenderIncome, 
+       aes(x = INCOME,
+           y = Percentage,
+           group = GENDER)) +
+  geom_line(linetype = "dashed", 
+            aes(color = GENDER), 
+            size = 0.5) +
+  geom_point(aes(color = GENDER), 
+             size = 6) +
+  scale_color_manual(values = c("red","blue") ) +
+  labs(x = "Salary Bracket",
+       y = "Percent of respondents (%)") +
+  theme_point +
+  guides(color=guide_legend("GENDER")) 
+```
+
+```{r, fig.height= 6, fig.width= 12}
+ggplot(BRFSS, aes(x= INCOME , group = GENDER)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.6) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col5) +
+    labs(y = "Percent of respondents", fill = "INCOME") +
+    facet_grid(~  GENDER) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+library(DescTools)
+```
+
+```{r}
+CramerV(BRFSS$MICHD, BRFSS$AGE)
+CramerV(BRFSS$MICHD, BRFSS$GENDER)
+CramerV(BRFSS$MICHD, BRFSS$EDU)
+CramerV(BRFSS$MICHD, BRFSS$RELP)
+CramerV(BRFSS$MICHD, BRFSS$RACE)
+CramerV(BRFSS$MICHD, BRFSS$EMPL)  
+CramerV(BRFSS$MICHD, BRFSS$INCOME)
+```
+Strong association : AGE, EMPL
+Moderate to strong : RELP,INCOME
+Weak to moderate : GENDER, EDU, RACE
+
+***Community*** 
+```{r}
+df_COMMUN <- BRFSS %>% 
+  group_by(COMMUN) %>% 
+  dplyr::summarise(Count = n()) %>% 
+  ungroup()%>% 
+  arrange(desc(COMMUN)) 
+
+df_COMMUN
+```
+
+```{r}
+df2_COMMUN <- df_COMMUN %>% 
+  mutate(Percentage = round(Count/sum(Count),4)*100,
+         lab.pos = cumsum(Percentage)-0.5*Percentage)
+
+df2_COMMUN
+```
+
+```{r}
+geomtext_pie <- geom_text(aes(y = lab.pos,
+                              label = paste(Percentage,"%", sep = "")),
+                          col = "blue",
+                          size = 5)
+```
+
+```{r}
+ggplot(data = df2_COMMUN, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = COMMUN)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y") +
+  geomtext_pie +
+  theme_void() +
+    theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14)) +
+  scale_fill_manual(values = col3)
+```
+
+
+***RENT/OWN*** 
+```{r}
+df_renthome <- BRFSS %>% 
+  group_by(RENTHOME) %>% 
+  dplyr::summarise(Count = n()) %>% 
+  ungroup()%>% 
+  arrange(desc(RENTHOME)) 
+
+df_renthome %>% 
+  pander()
+```
+
+```{r}
+df2_renthome <- df_renthome %>% 
+  mutate(Percentage = round(Count/sum(Count),4)*100,
+         lab.pos = cumsum(Percentage)-0.5*Percentage)
+
+df2_renthome %>% 
+  pander()
+```
+
+```{r}
+ggplot(data = df2_renthome, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = RENTHOME))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geomtext_pie + 
+  
+  theme_void() +
+    theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14)) +
+  scale_fill_manual(values = col3)
+```
+
+**Lifestyle** (C)
+
+```{r}
+BRFSS %>% 
+  group_by(SMOKESTAT) %>% 
+  dplyr::count() %>% 
+  pander()
+```
+
+```{r}
+BRFSS$SMOKESTAT <- factor(BRFSS$SMOKESTAT,
+                      levels = c("Daily smoker",
+                                 "Someday smoker",
+                                 "Former smoker",
+                                 "Never smoker"), ordered = TRUE)
+```
+
+```{r, fig.height= 4, fig.width= 6, pdi = 300}
+df_SMOKESTAT <- BRFSS %>% 
+  group_by(SMOKESTAT) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(SMOKESTATgroup = factor(SMOKESTAT),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_SMOKESTAT, 
+       aes(x = SMOKESTAT, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "olivedrab4", 
+           fill = "olivedrab4",
+           width = 0.5) +
+  scale_y_continuous(breaks = seq(0,60,10)) +
+  geomtext_bar +
+  labs(x = "Smoker status",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***C4.EXERCISE***
+```{r}
+df_EXERpa30 <- BRFSS %>% 
+  group_by(EXERpa30) %>% 
+  dplyr::summarise(Count = n()) %>% 
+  ungroup()%>% 
+  arrange(desc(EXERpa30)) 
+
+df2_EXERpa30 <- df_EXERpa30 %>% 
+  mutate(Percentage = round(Count/sum(Count),4)*100,
+         lab.pos = cumsum(Percentage)-0.5*Percentage)
+
+df2_EXERpa30 %>% 
+  pander()
+```
+
+```{r}
+ggplot(data = df2_EXERpa30, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = EXERpa30))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geomtext_pie +
+  theme_void() +
+  theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14)) +
+  scale_fill_manual(values = c("steelblue","olivedrab4"))
+```
+
+
+***C2.ALCpa30***
+```{r}
+df_ALCpa30 <- BRFSS %>% 
+  group_by(ALCpa30) %>% 
+  dplyr::summarise(Count = n())
+
+df_ALCpa30 %>% 
+  pander()
+```
+```{r, fig.height= 5, fig.width= 4.5}
+ggplot(df_ALCpa30, 
+       aes(x = ALCpa30, 
+           y = Count)) +
+  geom_bar(stat = "identity",
+           color = "olivedrab4", 
+           fill = "olivedrab4",
+           width = 0.5) +
+  geom_text(aes(label=paste0(Count)), 
+             vjust = -0.3,
+             size = 4,
+             color= "black",
+             fontface = "bold") +
+  labs(x = "Days have at least one drink",
+       y = "Frequency",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r, fig.height= 5, fig.width= 4}
+df_ALCpa30 <- BRFSS %>% 
+  group_by(ALCpa30) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(ALCpa30group = factor(ALCpa30),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_ALCpa30, 
+       aes(x = ALCpa30, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "olivedrab4", 
+           fill = "olivedrab4",
+           width = 0.55) +
+  geomtext_bar +
+  labs(x = "Days have at least one drink",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r}
+chisq.test(BRFSS$EXERpa30, BRFSS$SMOKESTAT)
+chisq.test(BRFSS$ALCpa30, BRFSS$EXERpa30)
+chisq.test(BRFSS$SMOKESTAT, BRFSS$ALCpa30)
+```
+
+
+```{r}
+CramerV(BRFSS$EXERpa30, BRFSS$SMOKESTAT)
+CramerV(BRFSS$ALCpa30, BRFSS$EXERpa30)
+CramerV(BRFSS$SMOKESTAT, BRFSS$ALCpa30)
+```
+
+
+
+```{r}
+CramerV(BRFSS$MICHD, BRFSS$SMOKESTAT)
+CramerV(BRFSS$MICHD, BRFSS$EXERpa30)
+CramerV(BRFSS$MICHD, BRFSS$ALCpa30)
+```
+SMOKESTAT : strong assocation with the outcome
+Maybe we should remove all the data that were collected during the past 30 days
+
+
+
+
+
+
+***D1.GENHLTH***
+```{r}
+BRFSS$GENHLTH <- factor(BRFSS$GENHLTH,
+                                levels =  c("Poor",
+                                            "Fair",
+                                            "Good",
+                                            "Very Good",
+                                            "Excellent"), ordered = TRUE)
+```
+
+```{r, fig.height= 5, fig.width= 5}
+df_GENHLTH <- BRFSS %>% 
+  group_by(GENHLTH) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(SMOKESTATgroup = factor(GENHLTH),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_GENHLTH, 
+       aes(x = GENHLTH, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "purple4", 
+           fill = "purple4",
+           width = 0.6) +
+  scale_y_continuous(breaks = seq(0,60,10)) +
+  geomtext_bar +
+  labs(x = "In general, your health is:",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r}
+CramerV(BRFSS$MICHD, BRFSS$GENHLTH)
+```
+0.26 = very strong
+
+
+```{r, fig.height= 8, fig.width= 20}
+ggplot(BRFSS, aes(x = GENHLTH, group = INCOME)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col5) +
+    labs(y = "Percent of respondents", fill = "INCOME") +
+    facet_grid(~ INCOME) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+
+```{r, fig.height= 8, fig.width= 20}
+ggplot(BRFSS, aes(x =INCOME , group = GENHLTH)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col5) +
+    labs(y = "Percent of respondents", fill = "GENHLTH") +
+    facet_grid(~  GENHLTH) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Healthy Days** (E)— Health Related Quality of Life 
+E1. PHYSHLTH (Number of Days Physical Health Not Good)
+        3 level not good physical health status: 0 days, 1-9 days, 10-30 days
+E2. MENTHLTH (Number of Days Mental Health Not Good)
+        3 level not good mental health status: 0 days, 1-9 days, 10-30 days
+
+```{r}
+library(gridExtra)
+library(grid)
+```
+
+```{r, fig.height= 5,fig.width= 8}
+p_PHYSHLTH <- ggplot(BRFSS, aes(x = PHYSHLTHpa30)) +
+  geom_bar(aes(y = (..count..)/sum(..count..)),
+           fill = "purple4",
+           width = 0.6) +
+  scale_y_continuous(labels = percent,
+                     limits = c(0, 0.7))+
+  geom_text(size = 5,
+            color= "black",
+            aes(y = ((..count..)/sum(..count..)),
+                label = scales::percent((..count..)/sum(..count..))),
+            stat = "count", 
+            vjust = -0.5) +
+  labs(x = "Physical Health Not Good",
+       y = "Percent of Respondents") +
+  theme_bar
+
+
+p_MENTHLTH <- ggplot(BRFSS, aes(x = MENTHLTHpa30)) +
+  geom_bar(aes(y = (..count..)/sum(..count..)),
+           fill = "purple4",
+           width = 0.6) +
+  scale_y_continuous(labels = percent,
+                     limits = c(0, 0.7))+
+  geom_text(size = 5,
+            color= "black",
+            aes(y = ((..count..)/sum(..count..)),
+                label = scales::percent((..count..)/sum(..count..))),
+            stat = "count", 
+            vjust = -0.5) +
+  labs(x = "Mental Health Not Good",
+       y = "Percent of Respondents") +
+  theme_bar
+
+
+grid.arrange(p_PHYSHLTH, p_MENTHLTH, ncol = 2)
+```
+
+```{r}
+HRQOL <- data.frame(
+  Health = c("Physical","Physical","Physical",
+          "Mental","Mental","Mental"),
+  NumberofDays = rep(c("0", "1-9", "10-30"),2),
+  Percentage = c(63.5, 21.4, 15.1,
+                 66.3, 19.7, 14.0 ))
+HRQOL %>% 
+  pander()
+```
+
+```{r, fig.height = 5, fig.width = 7.5}
+ggplot(data = HRQOL,
+       aes(x = Health,
+       y = Percentage,
+       fill = NumberofDays)) + 
+  geom_bar(stat = "identity",
+           position = "dodge",
+           size = 0.25)+
+  scale_y_continuous(limits = c(0, 70))+
+  scale_fill_manual(values= col3)+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            position = position_dodge(width = 0.9), 
+            vjust= -0.25,
+            size = 5,
+            color = "black") +
+  labs(x = "Health related quality of life",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+ theme_bar
+```
+
+```{r, fig.height = 5, fig.width= 6}
+ggplot(data = HRQOL,
+       aes(x = NumberofDays,
+       y = Percentage,
+       fill = Health)) + 
+  geom_bar(stat = "identity",
+           position = "dodge")+
+  scale_y_continuous(limits = c(0, 70))+
+  scale_fill_manual(values= col2)+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.25,
+            size = 4.5,
+            color = "black") +
+  labs(x = "Number of days where health is not good",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+Is there association between metal health and physical health
+```{r}
+phys_ment <-  table(BRFSS$PHYSHLTHpa30, BRFSS$MENTHLTHpa30)
+print.table(phys_ment)
+```
+
+```{r}
+chisq.test(BRFSS$PHYSHLTHpa30,BRFSS$MENTHLTHpa30, correct = FALSE)
+```
+Since the p -value less than 0.05, we reject the null hypothesis and conclude that the two variables are in fact dependent
+
+```{r}
+CramerV(BRFSS$PHYSHLTHpa30, BRFSS$MENTHLTHpa30)
+```
+the cramerV coefficient is 0.24, therefore, the assocation between Physical health and metal heath is very strong
+
+```{r}
+CramerV(BRFSS$GENHLTH, BRFSS$MENTHLTHpa30)
+CramerV(BRFSS$GENHLTH, BRFSS$PHYSHLTHpa30)
+```
+GENHLTH and MENTHLTHpa30 has a strong association.
+GENHLTH and PHYSHLTHpas has a very strong relationship.
+we may have to decide if we will remove the PHYSHLTHpas30 and MENTHTHpa30
+
+
+**Health Care Access** (F)
+F1. HPLN1 (Have any health care coverage) ==> HPLN
+F2. MEDCOST (Could Not See Doctor Because of Cost)
+F3. CHECKUP1  
+
+```{r}
+df_HLTHPLN <- BRFSS %>% 
+  group_by(HLTHPLN) %>% 
+  dplyr::summarise(Count = n()) %>% 
+  ungroup()%>% 
+  arrange(desc(HLTHPLN)) 
+
+df2_HLTHPLN <- df_HLTHPLN %>% 
+  mutate(Percentage = round(Count/sum(Count),4)*100,
+         lab.pos = cumsum(Percentage)-0.5*Percentage)
+
+df2_HLTHPLN %>% 
+  pander()
+```
+
+```{r}
+ggplot(data = df2_HLTHPLN, 
+       aes(x = "", 
+           y = Percentage, 
+           fill = HLTHPLN))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geom_text(aes(y = lab.pos, 
+                label = paste(Percentage,"%", sep = "")), col = "white", size = 4) +
+  theme_void() +
+  scale_fill_manual(values = c("steelblue","darkgreen")) +
+  theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14))
+```
+
+```{r}
+df_MEDICOST <- BRFSS %>% 
+  group_by(MEDICOST) %>% 
+  dplyr::summarise(Count = n()) %>% 
+  ungroup()%>% 
+  arrange(desc(MEDICOST)) 
+
+df2_MEDICOST <- df_MEDICOST %>% 
+  mutate(percentage = round(Count/sum(Count),4)*100,
+         lab.pos = cumsum(percentage)-0.5*percentage)
+
+df2_MEDICOST  
+
+
+ggplot(data = df2_MEDICOST, 
+       aes(x = "", 
+           y = percentage, 
+           fill = MEDICOST))+
+  geom_bar(stat = "identity")+
+  coord_polar("y") +
+  geom_text(aes(y = lab.pos, 
+                label = paste(percentage,"%", sep = "")), col = "white", size = 4) +
+  theme_void() +
+  scale_fill_manual(values = c("steelblue","darkgreen"))+
+   theme(legend.title = element_text(color = "black", size = 14),
+        legend.text = element_text(color = "black", size = 14))
+```
+
+```{r}
+accesHLTH <-  table(BRFSS$HLTHPLN, BRFSS$MEDICOST)
+print.table(accesHLTH)
+```
+```{r}
+chisq.test(accesHLTH , correct = FALSE)
+```
+
+```{r, fig.height= 5, fig.width= 4.5}
+df_CHECKUP <- BRFSS %>% 
+  group_by(CHECKUP) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(CHECKUPgroup = factor(CHECKUP),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_CHECKUP, 
+       aes(x = CHECKUP, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "darkgreen", 
+           fill = "darkgreen",
+           width = 0.6) +
+  scale_y_continuous(breaks = seq(0,100,20)) +
+  geomtext_bar +
+  labs(x = "Last visited a doctor for a routine checkup (Year)",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r}
+CramerV(BRFSS$HLTHPLN, BRFSS$MEDICOST)
+CramerV(BRFSS$HLTHPLN, BRFSS$CHECKUP)
+CramerV(BRFSS$MEDICOST, BRFSS$CHECKUP)
+```
+
+***G. CHRONIC HEALTH CONDITIONS***
+```{r}
+geombar_CHC <- geom_bar(aes(y = (..count..)/sum(..count..)),
+           fill = "firebrick4",
+           alpha = 0.9,
+           width = 0.5) 
+  
+geomtext_CHC <- geom_text(size = 4,
+            color= "blue",
+            aes(y = ((..count..)/sum(..count..)),
+                label = scales::percent((..count..)/sum(..count..))),
+            stat = "count", 
+            vjust = -0.5)
+```
+
+**G1.ARTHRITIS**
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = ARTHRITIS)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Arthritis?",
+       y = "Percent of Respondents",
+      caption = "Data source: BRFSS2018") + 
+  theme_bar
+```
+
+***G2. PULMOND***
+chronic obstructive pulmonary disease, C.O.P.D., emphysema or chronic bronchitis?
+
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = PULMOND)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "PULMOND?",
+       y = "Percent of Respondents",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G3.ASTHMA***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = ASTHMA)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "ASTHMA?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G4.DEPRESSION***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = DEPRESSION)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "DEPRESSION?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G5.KIDNEY***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = KIDNEY)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "DEPRESSION?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G6. DIABETE***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = DIABETE)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "DEPRESSION?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G7. CANCER***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = CANCER)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "DEPRESSION?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+***G7. STROKE***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = STROKE)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "STROKE?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+
+PULMOND, no, yes, 91, 9
+ARTHRITIS, no, yes, 63, 37
+ASTHMA, no, yes,86,14
+DEPRESSION, no, yes, 81,19
+KIDNEY, no, yes, 96, 4
+DIABET, no, yes, 83, 17
+CANCER, no, yes, 82, 18
+STROKE, no, yes, 96, 4
+```{r}
+BRFSS %>% 
+  group_by(MICHD) %>% 
+  dplyr::count()
+
+```
+
+```{r}
+ChronicHC <- data.frame(
+  CHC = c("ARTHRITIS",
+         'ASTHMA',
+          "CANCER",
+          "DEPRESSION",
+          "DIABETE",
+          "KIDNEY",
+         "PLUMOND", 
+          "STROKE",
+         "MICHD"),
+  Percentage = c(33.40, 13.82, 16.97, 18.81, 14.02, 3.59, 7.95, 3.94, 8.80 ))
+
+ChronicHC
+```
+
+```{r}
+col8 <-  c("#0072BB", "#FF4C3B","#FFD034","#51A39D","#06425C", "#C6C8CA","#814374", "red", "salmon")
+```
+
+```{r, fig.width = 10}
+ggplot(data = ChronicHC, aes(x= reorder(CHC, -Percentage),
+                             y = Percentage,
+                             fill =  as.factor(Percentage))) + 
+  geom_bar(stat = "identity",
+           width = 0.60) +
+  geom_text(aes(label = paste0(Percentage,"%")), 
+              vjust = -0.25,
+              size = 4.5,
+              color = "black") +
+   scale_fill_manual(values = col8) +
+  theme(legend.position="none") +
+    labs(x = "Chronic health condition",
+       y = "Percent of Respondents (%)",
+        caption = "Data source: BRFSS2018")+
+  theme_bar
+```
+
+**MICHD***
+```{r, fig.height = 5, fig.width = 4}
+ggplot(BRFSS, aes(x = MICHD)) +
+  geombar_CHC +
+  geomtext_CHC +
+  scale_y_continuous(labels = percent)+
+  labs(x = "DEPRESSION?",
+       y = "Percent of Respondents",
+        caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r}
+df_CHC <- data.frame(
+  ChronicHLTHcond = c("CANCER","CANCER",
+                      "DIABETE","DIABETE",
+                      "KIDNEY","KIDNEY",
+                      "DEPRESSION","DEPRESSION",
+                      "ASTHMA","ASTHMA",
+                      "PULMOND","PULMOND",
+                      "ARTHRITIS","ARTHRITIS",
+                      "STROKE","STROKE",
+                      "MICHD","MICHD"),
+  Status = rep(c("NO", "YES"),9),
+  Percentage = c(83, 17, 
+                 86, 14, 
+                 96, 4,
+                 81, 19,
+                 86, 14,
+                 92, 8,
+                 67, 33,
+                 96, 4,
+                 91, 9))
+df_CHC %>% 
+  pander()
+```
+
+```{r}
+df2_CHC <- df_CHC %>% 
+  mutate(lab_ypos = cumsum(Percentage/10) - 0.5* Percentage/10) 
+
+df2_CHC
+```
+
+
+```{r, fig.height = 6, fig.width= 12, dpi = 300}
+ggplot(df2_CHC, 
+       aes(x = ChronicHLTHcond,
+           y = Percentage,
+           fill = Status)) + 
+    geom_bar(position = "dodge", 
+             stat = "identity")+
+    geom_text(aes(label = paste0(Percentage,"%")), 
+              position = position_dodge(width=0.9), 
+              vjust = -0.25,
+              size = 5,
+              color = "black") +
+  scale_fill_manual(values=c("#5F9EA0", "#E1B378")) +
+  labs(x = "Chronic Healthe Condition",
+       y = "Percent of Respondents (%)",
+        caption = "Data source: BRFSS2018") +
+theme_bar
+```
+
+```{r}
+CramerV(BRFSS$CANCER, BRFSS$ARTHRITIS)
+CramerV(BRFSS$CANCER, BRFSS$ASTHMA)
+CramerV(BRFSS$CANCER, BRFSS$DEPRESSION)
+CramerV(BRFSS$CANCER, BRFSS$DIABETE)
+CramerV(BRFSS$CANCER, BRFSS$KIDNEY)
+CramerV(BRFSS$CANCER, BRFSS$PULMOND)  
+CramerV(BRFSS$CANCER, BRFSS$BMICAT)
+CramerV(BRFSS$CANCER, BRFSS$MICHD)
+CramerV(BRFSS$CANCER, BRFSS$STROKE)
+```
+Except for Arthritis, nothing is associated strongly with cancer
+
+```{r}
+CramerV(BRFSS$CANCER, BRFSS$CHECKUP)
+```
+
+```{r}
+CramerV(BRFSS$MICHD, BRFSS$ARTHRITIS)
+CramerV(BRFSS$MICHD, BRFSS$ASTHMA)
+CramerV(BRFSS$MICHD, BRFSS$DEPRESSION)
+CramerV(BRFSS$MICHD, BRFSS$DIABETE)
+CramerV(BRFSS$MICHD, BRFSS$KIDNEY)
+CramerV(BRFSS$MICHD, BRFSS$PULMOND)  
+CramerV(BRFSS$MICHD, BRFSS$CANCER)
+```
+
+>0.25 Very strong
+>0.15 Strong
+>0.10 Moderate
+>0.05 Weak
+>0 No or very weak
+Akoglu, H.,User's guide to correlation coefficients. Turkish Journal of Emergency Medicine 2018, 18.
+
+```{r}
+BRFSS %>% 
+  group_by(CANCER, KIDNEY, ASTHMA, ARTHRITIS, PULMOND, DEPRESSION, DIABETE, STROKE, MICHD) %>% 
+  dplyr::count() %>% 
+  head(20)
+```
+
+106927 people are CHC free
+279966 - 106927 = 173039 (61.8%) people have at least one chronic health condition
+43 people have all the CHCs (8)
+
+```{r}
+df3_CHC <- BRFSS %>% 
+  mutate(Cancer =  case_when(CANCER == "Yes" ~ 1,
+                             CANCER == "No" ~ 0),
+         Kidney =  case_when(KIDNEY == "Yes" ~ 1,
+                             KIDNEY  == "No" ~ 0),
+         Asthma =  case_when(ASTHMA == "Yes" ~ 1,
+                             ASTHMA == "No" ~ 0),
+         Arthritis = case_when(ARTHRITIS == "Yes" ~ 1,
+                                ARTHRITIS == "No" ~ 0),
+         Pulmond =  case_when(PULMOND == "Yes" ~ 1,
+                              PULMOND == "No" ~ 0),
+         Depression =  case_when(DEPRESSION == "Yes" ~ 1,
+                                 DEPRESSION == "No" ~ 0),
+         Diabete =  case_when(DIABETE == "Yes" ~ 1,
+                              DIABETE == "No" ~ 0),
+         Stroke = case_when(STROKE == "Yes" ~ 1,
+                            STROKE == "No" ~ 0),
+         Michd =  case_when(MICHD == "Yes" ~ 1,
+                            MICHD == "No" ~ 0),
+         )
+```
+Take only column with numeric values
+```{r}
+df4_CHC <- df3_CHC %>% 
+  select(Cancer, Kidney, Asthma, Arthritis, Pulmond, Depression, Diabete, Stroke,Michd)
+```
+
+```{r}
+df5_CHC <-  df4_CHC %>% 
+  group_by(Cancer, Kidney, Asthma, Arthritis, Pulmond, Depression, Diabete, Stroke, Michd) %>% 
+  dplyr::count(name = "subtotal_case")
+
+head(df5_CHC,30)
+
+tail(df5_CHC)
+```
+
+```{r}
+df5_CHC$NbofCHC <- rowSums(df5_CHC[,c(1:9)])
+df6_CHC <- df5_CHC
+```
+
+```{r}
+df6_CHC
+```
+
+All the people living with at one chronic health condition
+```{r}
+df6_CHC %>% 
+  filter(NbofCHC == 1)
+```
+
+```{r}
+df6_CHC %>% 
+  group_by(NbofCHC) %>% 
+  dplyr::summarise(totalcase = sum(subtotal_case))
+```
+
+```{r}
+df7_CHC <- df6_CHC %>% 
+  group_by(NbofCHC) %>% 
+  dplyr::summarise(Total_case = sum(subtotal_case))
+
+df7_CHC
+```
+
+```{r, fig.height= 7.5, fig.width= 7.5}
+ggplot(data = df7_CHC,
+           aes(x = NbofCHC, 
+           y  = Total_case,
+           fill =  Total_case)) +
+  geom_bar(stat = "identity") +
+  scale_fill_gradient(low = "darkred", high = "yellow")+
+  geom_text(aes(label = Total_case), 
+            vjust = -0.5, 
+            color = "darkblue", 
+            size = 4) +
+  theme_minimal() +
+  scale_y_continuous(limits = c(0,120000),
+                     breaks = seq(0,120000, by = 20000))+
+  scale_x_continuous(breaks = seq(0,9,by = 1))+
+  labs(x = "Number of Chronic heath condition",
+       y = "Frequency",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r}
+df8_CHC <- df7_CHC %>% 
+  mutate(Percentage = round(Total_case*100/sum(Total_case),2))
+
+df8_CHC
+```
+
+```{r, fig.height = 7.5, fig.width = 7.5, dpi = 300}
+ggplot(data = df8_CHC,
+           aes(x = NbofCHC, 
+               y  = Percentage,
+               fill = Percentage)) +
+  scale_fill_gradient(low = "darkred", high = "yellow")+
+  geom_bar(stat = "identity")+
+  geom_text(aes(label = paste0(Percentage,"%", "\n", Total_case)), 
+            vjust = -0.1, 
+            color = "darkblue", 
+            size = 4.5) +
+  scale_x_continuous(breaks = seq(0,9,by = 1))+
+  scale_y_continuous(limits = c(0,40)) +
+  theme_minimal() +
+  labs(x = "Number of Chronic heath condition",
+       y = "Percentage (%)",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size=12),
+        axis.title = element_text(size=12,face="bold"),
+        plot.caption = element_text(color = "grey44",size = 12, face = "italic"),
+        legend.title = element_text(color = "blue", size = 12),
+        legend.text = element_text(size=12),
+        legend.position = "non")
+```
+
+
+**Oral Health** (H)
+***H1. RMVTETH***
+```{r}
+BRFSS$RMVTETH <- factor(BRFSS$RMVTETH,
+  levels= c("0",
+            "1-5",
+            ">= 6",
+            "All"), ordered = TRUE)
+```
+
+
+```{r, fig.height= 5, fig.width= 4}
+df_RMVTETH <- BRFSS %>% 
+  group_by(RMVTETH) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(CHECKUPgroup = factor(RMVTETH),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_RMVTETH, 
+       aes(x = RMVTETH, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "darkgreen", 
+           fill = "darkgreen",
+           width = 0.6) +
+  scale_y_continuous(breaks = seq(0,50,10)) +
+  geomtext_bar +
+  labs(x = "Number of teeth that have been removed",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x= RMVTETH , group = AGE)) + # teeth removed by age
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col4) +
+    labs(y = "Percent of respondents", fill="IRMVTETH") +
+    facet_grid(~ AGE) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+df_RMVTETH <- BRFSS %>%
+  group_by(RMVTETH) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(Rmvteth = factor(RMVTETH),
+         Ratio = Count/sum(Count),
+         label = percent(Ratio %>% round(4)))
+
+df_RMVTETH %>% 
+  pander()
+```
+
+Age in function of of teeth removed
+```{r}
+df_RmvtethAge <- BRFSS %>% 
+  group_by(AGE, RMVTETH) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df2_RmvtethAge <- ddply(df_RmvtethAge, .(RMVTETH), transform, Percentage = Count*100/sum(Count))
+
+df2_RmvtethAge
+```
+
+```{r}
+col7 <-  c("#0072BB", "#FF4C3B","#FFD034","#51A39D","#06425C", "#C6C8CA","#814374")
+```
+
+```{r}
+ggplot( )+
+  geom_bar(data = df2_RmvtethAge, 
+           aes(x = RMVTETH, 
+               y = Percentage,
+               fill = AGE),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Number of teeth removed") +
+  scale_fill_manual(values = col7) +
+  scale_y_continuous(breaks = seq(0, 100, 20)) +
+  themebar_stacked
+```
+
+teeth removed in function of age group
+```{r}
+df2_AgeRmvteth <- ddply(df_RmvtethAge ,.(AGE),transform, Percentage = Count*100/sum(Count))
+df2_AgeRmvteth
+```
+
+```{r, fig.height= 7.5, fig.width= 7.5}
+ggplot( )+
+  geom_bar(data = df2_AgeRmvteth, 
+           aes(x = AGE, 
+               y = Percentage,
+               fill =  RMVTETH),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Age group") +
+  scale_fill_manual(values = col4) +
+  scale_y_continuous(breaks = seq(0, 100, 20)) +
+  themebar_stacked
+```
+Number of teeth in function of age group.
+
+```{r, fig.width= 10, fig.height= 5 }
+ggplot(data = df2_AgeRmvteth, aes(x = AGE, 
+                           y = Percentage, 
+                           group = RMVTETH)) +
+  geom_line(linetype = "dashed", 
+            aes(color = RMVTETH), 
+            size = 0.5) +
+  geom_point(aes(color = RMVTETH), 
+             size = 6) +
+  scale_color_manual(values = col4) +
+  labs(y = "Percent of respondents (%)", x = "Year of education") +
+  theme_point +
+  guides(color=guide_legend("Nb of removed teeth")) 
+```
+
+```{r}
+CramerV(BRFSS$AGE, BRFSS$RMVTETH)
+```
+Strong assocation
+
+
+***H1.LASTDENTV***
+```{r, fig.height= 5, fig.width= 4}
+df_LASTDENTV <- BRFSS %>% 
+  group_by(LASTDENTV) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(LASTDENTVgroup = factor(LASTDENTV),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_LASTDENTV, 
+       aes(x = LASTDENTV, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "darkgreen", 
+           fill = "darkgreen",
+           width = 0.6) +
+  scale_y_continuous(breaks = seq(0,70,10)) +
+  geomtext_bar +
+  labs(x = "Last time visited dentist",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+
+```{r, fig.height= 6, fig.width= 12}
+ggplot(BRFSS, aes(x = RMVTETH , group = LASTDENTV)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= c("tomato", "cyan4", "red","blue", "yellow")) +
+    labs(y = "Percent of respondents", fill = "LASTDENTV") +
+    facet_grid(~  LASTDENTV) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+CramerV(BRFSS$LASTDENTV, BRFSS$RMVTET)
+```
+strong association
+
+```{r}
+df_RmvtethLastdentv <- BRFSS %>% 
+  group_by(LASTDENTV, RMVTETH) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df_RmvtethLastdentv 
+```
+
+```{r}
+df2_RmvtethLastdentv <- ddply(df_RmvtethLastdentv,.(LASTDENTV),transform, Percentage = Count*100/sum(Count))
+df2_RmvtethLastdentv 
+```
+
+```{r, fig.height= 5, fig.width= 6}
+ggplot( )+
+  geom_bar(data = df2_RmvtethLastdentv, 
+           aes(x = LASTDENTV, 
+               y = Percentage,
+               fill =  RMVTETH),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Last time visited dentist") +
+  scale_fill_manual(values = col4) +
+  scale_y_continuous(breaks = seq(0, 100, 10)) +
+  themebar_stacked
+```
+
+
+```{r, fig.width=7.5, fig.height= 5 }
+ggplot(data = df2_RmvtethLastdentv, aes(x = LASTDENTV, 
+                           y = Percentage, 
+                           group = RMVTETH)) +
+  geom_line(linetype = "dashed", 
+            aes(color = RMVTETH), 
+            size = 0.5) +
+  geom_point(aes(color = RMVTETH), 
+             size = 6) +
+  scale_color_manual(values = col4) +
+  labs(y = "Percent of respondents (%)", x = "Last time visited dental clinic") +
+  theme_point +
+  guides(color=guide_legend("Nb of removed teeth")) 
+```
+
+Visiting dentist and income
+```{r, fig.height= 8, fig.width= 20}
+ggplot(BRFSS, aes(x= INCOME, group = LASTDENTV)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= c("tomato", "cyan4", "red","blue", "yellow")) +
+    labs(y = "Percent of respondents", fill = "LASTDENTV") +
+    facet_grid(~ LASTDENTV) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+df_IncomeLastdentv <- BRFSS %>% 
+  group_by(LASTDENTV, INCOME) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df2_IncomeLastdentv <- ddply(df_IncomeLastdentv,.(LASTDENTV),transform, Percentage = Count*100/sum(Count))
+
+df2_IncomeLastdentv
+```
+
+
+```{r, fig.height= 5, fig.width= 6}
+ggplot( )+
+  geom_bar(data = df2_IncomeLastdentv, 
+           aes(x = LASTDENTV, 
+               y = Percentage,
+               fill =  INCOME),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Last time visited dentist") +
+  scale_fill_manual(values = col5) +
+  scale_y_continuous(breaks = seq(0, 100, 10)) +
+  themebar_stacked
+```
+
+```{r}
+df3_IncomeLastdentv <- ddply(df_IncomeLastdentv,.(INCOME),transform, Percentage = Count*100/sum(Count))
+df3_IncomeLastdentv
+```
+
+```{r, fig.height= 5, fig.width= 7}
+ggplot( )+
+  geom_bar(data = df3_IncomeLastdentv, 
+           aes(x = INCOME , 
+               y = Percentage,
+               fill =  LASTDENTV),
+               stat = "identity")+
+   labs(y = "Percent of respondents (%)", 
+        x = "Income bracket") +
+  scale_fill_manual(values = col5) +
+  scale_y_continuous(breaks = seq(0, 100, 10)) +
+  themebar_stacked
+```
+
+```{r, fig.width= 8, fig.height= 5 }
+ggplot(data = df3_IncomeLastdentv, 
+       aes(x = INCOME, 
+           y = Percentage,
+           group = LASTDENTV)) +
+  geom_line(linetype = "dashed", 
+            aes(color = LASTDENTV), 
+            size = 0.5) +
+  geom_point(aes(color = LASTDENTV), 
+             size = 6) +
+  scale_color_manual(values = col5) +
+  labs(x = "Income range",
+       y = "Percent of respondents (%)") +
+  theme_point +
+  guides(color=guide_legend("Last time visited dentist"))
+```
+
+Last than 1 year --- more frequent than from 1 to 2 year
+higher income - visit dentist more
+
+
+```{r, fig.height= 10 , fig.width= 5}
+df_LASTDENTVRACE <- BRFSS %>% 
+  select(LASTDENTV, RACE) %>% 
+  filter(RACE == "White" | RACE == "Black"| RACE == "Hispanic" | RACE == "Asian") %>% 
+  group_by(LASTDENTV, RACE) %>% 
+  dplyr::summarise(Count =  n()) 
+
+
+df2_LASTDENTVRACE <- ddply(df_LASTDENTVRACE,.(RACE),transform, Percentage = round(Count*100/sum(Count),2))
+
+df2_LASTDENTVRACE 
+```
+
+```{r, fig.height= 8 , fig.width= 8}
+ggplot(df2_LASTDENTVRACE, 
+       aes(x = LASTDENTV, 
+           y = Percentage,
+           fill = LASTDENTV)) +
+  geom_bar(stat = "identity",
+           width = 0.75) +
+  scale_fill_manual(values= c("blue", "cyan4", "cyan3","cyan2", "red")) +
+  scale_y_continuous(breaks = seq(0,100,20)) +
+  geomtext_bar +
+  facet_wrap(~ RACE, nrow = 2) +
+  labs(x = "Last time visited dentist (Year)",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+
+```
+
+***BMICAT***
+```{r}
+BRFSS$BMICAT <- factor(BRFSS$BMICAT,
+                            levels = c("Underweight",
+                                       "Normal",
+                                       "Overweight",
+                                       "Obese"), ordered = TRUE)
+
+```
+
+```{r, fig.height= 5, fig.width= 5}
+df_BMICAT <- BRFSS %>% 
+  group_by(BMICAT) %>% 
+  dplyr::summarise(Count =  n()) %>% 
+  mutate(BMICATgroup = factor(BMICAT),
+         Percentage = round(Count*100/sum(Count),2),
+         label =  percent(Percentage/100))
+
+ggplot(df_BMICAT, 
+       aes(x = BMICAT, 
+           y = Percentage)) +
+  geom_bar(stat = "identity",
+           color = "firebrick4", 
+           fill = "firebrick4",
+           width = 0.6) +
+  scale_y_continuous(breaks = seq(0,50,10)) +
+  geomtext_bar +
+  labs(x = "BMI categories",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") +
+  theme_bar
+```
+Among American aged 18 and more, almost 1 out of every 3 (~ 33%) adults  were overweight or/and obese while 1.6% were underweight, based on their measured BMI.
+
+BMICAT and EDUCATION
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x= BMICAT , group = EDU)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col4) +
+    labs(y = "Percent of respondents", fill = "BMICATE") +
+    facet_grid(~ EDU) +
+    scale_y_continuous(labels = scales::percent) +
+  theme_bar
+```
+
+
+```{r}
+df_EduBMI <- BRFSS %>% 
+  group_by(EDU, BMICAT) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df2_EduBMI <- ddply(df_EduBMI,.(EDU),transform, Percentage = Count*100/sum(Count))
+
+df2_EduBMI
+```
+
+```{r, fig.width= 7.5, fig.height= 5 }
+ggplot(data = df2_EduBMI, 
+       aes(x = EDU, 
+           y = Percentage,
+           group = BMICAT)) +
+  geom_line(linetype = "dashed", 
+            aes(color = BMICAT), 
+            size = 0.5) +
+  geom_point(aes(color = BMICAT), 
+             size = 6) +
+  scale_color_manual(values = col4) +
+  labs(x = "Education year",
+       y = "Percent of respondents (%)") +
+  theme_point +
+  guides(color=guide_legend("Education year"))
+```
+
+```{r, fig.height= 5, fig.width= 16}
+ggplot(BRFSS, aes(x= BMICAT , group =  AGE )) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+  coord_flip()+
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values=  col4) +
+    labs(y = "Percent of respondents", fill = "EDU") +
+    facet_grid(~ AGE ) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+Obesity rate for adults
+18-29 : 25.31 %
+30-39 : 33.8 %
+40-49 : 38.8 %
+50-59 : 39.5 %
+60-69 : 37.09 %
+70-79 : 32.60 %
+80+ : 19.3 %
+
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x=  AGE, group =  BMICAT )) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col7) +
+    labs(y = "Percent of respondents", fill = "EDU") +
+    facet_grid(~ BMICAT ) +
+    scale_y_continuous(labels = scales::percent)+
+  theme_bar
+```
+
+```{r}
+df_BMIage <- BRFSS %>% 
+  group_by(AGE, BMICAT) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df_BMIage
+```
+
+```{r, fig.width= 7.5, fig.height= 5}
+ggplot(data=df_BMIage, aes(x=AGE, 
+                           y = Count, 
+                           group=BMICAT)) +
+  geom_line(linetype="dashed", 
+            aes(color = BMICAT), 
+            size=1) +
+  geom_point(aes(color = BMICAT), 
+             size= 6) +
+  scale_color_manual(values= col4) +
+  scale_y_continuous(breaks = seq(0,50000,10000)) +
+  labs(x = "Age group",
+       y = "Frequency",
+       caption = "Data source: BRFSS2018") +
+  theme_point
+```
+How to calculate proportion by age group?
+
+```{r}
+df2_BMIage <- ddply(df_BMIage,.(AGE),transform, Percentage = Count*100/sum(Count))
+df2_BMIage 
+```
+
+```{r, fig.width= 7.5, fig.height= 5}
+ggplot(data=df2_BMIage, aes(x=AGE, 
+                           y = Percentage, 
+                           group=BMICAT)) +
+  geom_line(linetype  = "dashed", 
+            aes(color = BMICAT), 
+            size = 0.5) +
+  geom_point(aes(color = BMICAT), 
+             size= 6) +
+  scale_color_manual(values= col4) +
+   labs(y = "Percent of respondents (%)", x = "Age range") +
+        theme_point
+```
+
+**INCOME and BMI
+
+```{r}
+df_BMIincome <- BRFSS %>% 
+  group_by(INCOME, BMICAT) %>% 
+  dplyr::summarise(Count =  n())
+
+df2_BMIincome <- ddply(df_BMIincome,.(INCOME),transform, Percentage = Count*100/sum(Count))
+df2_BMIincome
+```
+
+```{r, fig.width = 7.5, fig.height= 5}
+ggplot(data=df2_BMIincome, aes(x= INCOME, 
+                           y = Percentage, 
+                           group=BMICAT)) +
+  geom_line(linetype="dashed", 
+            aes(color = BMICAT), 
+            size = 0.5) +
+  geom_point(aes(color =BMICAT), 
+             size= 6) +
+  scale_color_manual(values=  col4) +
+   labs(y = "Percent of respondents (%)", x = "Income bracket") +
+  theme_point
+```
+
+Overweight increase with income, from 30% for 20K to 38% for 75K+
+Obsese decreses with income, from 36.9 % for 20 K to 28.9 for 75K+
+The normal weight is similar for all
+The underweight decreases from 2.5% to 1 %. 
+
+
+```{r, fig.width = 7.5, fig.height= 5}
+ggplot(data=df2_BMIincome, aes(x= BMICAT, 
+                           y = Percentage, 
+                           group = INCOME)) +
+  geom_line(linetype="dashed", 
+            aes(color = INCOME), 
+            size = 0.5) +
+  geom_point(aes(color = INCOME), 
+             size= 6) +
+  scale_color_manual(values=  col5) +
+   labs(y = "Percent of respondents (%)", x = "BMI categories") +
+  theme_point
+```
+
+```{r}
+df3_BMIincome <- ddply(df_BMIincome,.(BMICAT),transform, Percentage = Count*100/sum(Count))
+df3_BMIincome
+```
+
+```{r, fig.width= 7.5, fig.height= 5}
+ggplot(data=df3_BMIincome, 
+       aes(x= BMICAT, 
+           y = Percentage,
+           group = INCOME)) +
+  geom_line(linetype = "dashed", 
+            aes(color = INCOME), 
+            size = 0.5) +
+  geom_point(aes(color = INCOME), 
+             size= 6) +
+  scale_color_manual(values= col5) +
+   labs(x = "BMI categories",
+        y = "Percent of respondents (%)") +
+     theme_point
+```
+
+```{r, fig.width= 7.5, fig.height= 5}
+ggplot(data = df3_BMIincome, 
+       aes(x = INCOME, 
+           y = Percentage,
+           group = BMICAT)) +
+  geom_line(linetype = "dashed", 
+            aes(color = BMICAT), 
+            size = 0.5) +
+  geom_point(aes(color = BMICAT), 
+             size= 6) +
+  scale_color_manual(values= col5) +
+   labs(x = "Income range",
+        y = "Percent of respondents (%)") +
+     theme_point
+```
+
+```{r}
+df_INCOMEBMI <- BRFSS %>% 
+  group_by(INCOME, BMICAT) %>% 
+  dplyr::summarise(Count =  n()) 
+
+df_INCOMEBMI 
+```
+
+```{r, fig.width= 7.5, fig.height= 5}
+ggplot(data = df_INCOMEBMI , aes(x = INCOME, 
+                           y = Count, 
+                           group = BMICAT)) +
+  geom_line(linetype = "dashed", 
+            aes(color = BMICAT), 
+            size = 0.5) +
+  geom_point(aes(color = BMICAT), 
+             size= 6) +
+  scale_color_manual(values = col4) +
+   scale_y_continuous(breaks = seq(0,20000,5000)) +
+  labs(x = "Income braket",
+       y = "Frequency",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size = 12, color = "black"),
+        axis.title = element_text(size = 12, face="bold"),
+        legend.position = "none",
+        plot.caption = element_text(color = "grey", size = 12, face = "italic")) +
+  theme(legend.position="top")
+```
+
+```{r}
+CramerV(BRFSS$MICHD, BRFSS$BMICAT)
+```
+RMVTETH and MICHD have weak association
+
+by using face_grid (margin = true), we will obtain an grid of total
+
+
+```{r, fig.height= 8, fig.width= 20}
+ggplot(BRFSS, aes(x= BMICAT, group = RACE)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat = "count",
+             width = 0.6) +
+    geom_text(size = 4.5, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat = "count",
+              color = "black",
+              vjust = -0.5) +
+  scale_fill_manual(values= col4) +
+    labs(y = "Percent of respondents", 
+         x = "BMI categories") +
+    facet_grid(~ RACE) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+Table is maybe the best option here
+
+```{r}
+df_BMIrace <- BRFSS %>% 
+  group_by(RACE, BMICAT) %>% 
+  dplyr::summarise(Count =  n())
+
+df2_BMIrace <- ddply(df_BMIrace,.(RACE),transform, Percentage = Count*100/sum(Count))
+
+df2_BMIrace %>% 
+  pander()
+```
+
+Obese : AIAN, Black, Multiracial
+Obese + Overweight : AsiaN IS THE LEASt
+UNDERWEIGHT : ASIAN
+
+```{r, fig.height= 5, fig.width= 7.5}
+ggplot(BRFSS, aes(x= GENDER , group = BMICAT)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.75) +
+    geom_text(size = 4.5, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "black",
+              vjust = -.25) +
+  scale_fill_manual(values= col2) +
+    labs(y = "Percent of respondents", fill="GENDER") +
+    facet_grid(~ BMICAT) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+BRFSS %>% 
+  filter(BMICAT == "Obese") %>% 
+  group_by(GENDER) %>% 
+  dplyr::count()
+```
+
+```{r}
+BRFSS %>% 
+  filter(BMICAT == "Underweight") %>% 
+  group_by(GENDER) %>% 
+  dplyr::count()
+```
+
+```{r}
+df_BMIgender<- BRFSS %>% 
+  group_by(GENDER, BMICAT) %>% 
+  dplyr::summarise(Count =  n())
+
+df2_BMIgender <- ddply(df_BMIgender,.(GENDER),transform, Percentage = Count*100/sum(Count))
+
+df2_BMIgender  %>% 
+  pander()
+```
+
+
+```{r, fig.height= 5, fig.width= 7.5}
+#This is the best graph EVER
+ggplot(df2_BMIgender, aes(BMICAT, Percentage, fill=GENDER)) + 
+  geom_bar(position="dodge",
+           stat="identity")+
+   scale_fill_manual(values= col2) +
+      labs(x = "BMI categories", 
+           y = "Percent of Respondents (%)",
+        caption = "Data source: BRFSS2018") +
+   geom_text(size = 4.5,
+            color= "blue",
+            aes(y = Percentage,
+                label = paste0(round(Percentage,1),"%")),
+            stat = "identity", 
+            position = position_dodge2(width = 0.9, preserve = "single"), 
+            vjust= -0.5, 
+            hjust= 0.5) +
+  themebar_facet
+```
+
+```{r, fig.height=4, fig.width=10}
+ggplot(BRFSS, aes(x = BMICAT, group = GENDER)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.75) +
+    geom_text(size = 5, 
+              aes(label = scales::percent(..prop..),
+                  y = ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = 0.5,
+              hjust = -0.1) +
+  scale_fill_manual(values= col4) +
+    labs(x= "Categories of BMI",
+      y = "Percent of respondents") +
+    facet_grid(~ GENDER) +
+  coord_flip() +
+    scale_y_continuous(labels = scales::percent,limits = c(0,0.5))+
+  themebar_facet
+```
+Amomg male group, 41% of them are overweight while those of female are only 31%
+2 % of female are underweight, this number decrease to 1 % for male. 
+
+
+```{r}
+BRFSS6 <-  BRFSS %>% 
+  select(CANCER, ARTHRITIS, ASTHMA, PULMOND, DIABETE, MICHD, KIDNEY, DEPRESSION, SLEPTIM1)
+```
+
+```{r}
+head(BRFSS6)
+```
+
+```{r, fig.height= 7.5, fig.width= 7.5}
+ggplot(BRFSS, 
+       aes(x = PULMOND, 
+           y = SLEPTIM1)) +
+  geom_violin(fill = "cornflowerblue") +
+  geom_boxplot(width = .2, 
+               fill = "orange",
+               outlier.color = "orange",
+               outlier.size = 2) +
+  labs(title = "Sleep duration distribution by PULMOND status")
+```
+
+```{r, fig.height= 7.5, fig.width= 5}
+ggplot(BRFSS, 
+       aes(x = MICHD, 
+           y = SLEPTIM1, fill = MICHD)) +
+  geom_violin(trim = FALSE,fill = "cornflowerblue") +
+  geom_boxplot(width = 0.1, 
+               fill = "grey",
+               outlier.color = "grey",
+               outlier.size = 2) +
+  labs(title = "Sleep duration distribution by MICHD status") 
+```
+
+```{r}
+library(ggforce)
+```
+
+Numerical Data Descriptive Statistics
+
+```{r, fig.height= 5, fig.width= 7.5}
+ggplot(data = BRFSS, aes(SLEPTIM1)) + 
+  geom_bar(stat= "count", 
+                 fill= "olivedrab4") +  
+  coord_cartesian(clip = "off") +
+  labs( x = "Sleep duration (hours)",
+        y = "Frequency",
+        subtitle = "On average, how many hours of sleep do you get in a 24-hour period?",
+        caption = "Data source: BRFSS2018") + 
+  scale_y_continuous(limits = c(0, 100000), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 15), expand = c(0, 0)) +
+  theme_bar
+```
+
+****BIVARIATE analysis 1****
+```{r, fig.width= 7.5, fig.height=5}
+ggplot(BRFSS, aes(x= SLEPTIM1 , group = CANCER)) + 
+    geom_bar(aes(y = ..prop.., fill = factor(..x..)), 
+         stat="count",width = 1) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~CANCER) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+Boxplot
+
+```{r}
+library(cowplot)
+library(ggplot2)
+```
+
+```{r}
+theme_boxplot <-   theme(text = element_text(size = 12),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12,face="bold"),
+        plot.caption = element_text(color = "grey",size = 12, face = "italic"),
+        strip.text = element_text(size = 12, color = "blue", face = "bold.italic"),
+        strip.background = element_rect(fill = "slategray1"),
+        legend.position = "none")
+```
+
+
+```{r, fig.height= 5, fig.width= 5}
+sleptime_cancer <- ggplot(BRFSS, 
+       aes(x = CANCER, 
+           y = SLEPTIM1,
+           fill = CANCER)) +
+  geom_boxplot() +
+  scale_fill_hue(l = 40, c = 35)+
+  labs( x = "Cancer status",
+        y = "Sleep duration (hours)",
+        caption = "Data source: BRFSS2018")
+
+sleptime_cancer + theme_boxplot
+```
+
+```{r}
+BRFSS %>% 
+  summarise(mean = mean(SLEPTIM1),
+            std = sd(SLEPTIM1),
+            median = median(SLEPTIM1))
+```
+Compare two means
+sample size 
+```{r}
+BRFSS %>% 
+  group_by(CANCER) %>% 
+  dplyr::count()
+```
+
+```{r}
+library(purrr)
+```
+
+```{r}
+BRFSS %>% 
+  split(.$CANCER) %>% 
+  map(summary) %>% 
+  pander()
+```
+
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$CANCER)
+```
+The confident interval does not contain zero == > reject H0 
+==> The difference statistically significant 
+(Estimate for difference = 7.14- 6.98 = 0.16 hours= 9.6 minutes)
+
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$ARTHRITIS)
+```
+
+```{r, fig.width = 5, fig.height = 5}
+sleptime_Arthritis <- ggplot(BRFSS, 
+                          aes(x = ARTHRITIS, 
+                              y = SLEPTIM1,
+                              fill = ARTHRITIS)) +
+  geom_boxplot() +
+  scale_fill_hue(l = 40, c = 35)+
+  labs(x = "Arthritis status",
+      y = "Sleep duration (hours)",
+      caption = "Data source: BRFSS2018") 
+ 
+sleptime_Arthritis +  theme_boxplot
+```
+
+
+```{r, fig.width = 5, fig.height = 5}
+sleptime_pulmond <- ggplot(BRFSS, 
+                          aes(x = PULMOND, 
+                              y = SLEPTIM1,
+                              fill = PULMOND)) +
+  geom_boxplot() +
+  scale_fill_hue(l = 40, c = 35)+
+  labs(x = "Pulmonary disease status",
+      y = "Sleep duration (hours)",
+      caption = "Data source: BRFSS2018") 
+ 
+
+sleptime_pulmond +  theme_boxplot
+```
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$PULMOND)
+```
+
+```{r, fig.width = 5, fig.height = 5}
+sleptime_ASTHMA <- ggplot(BRFSS, 
+                          aes(x = ASTHMA, 
+                              y = SLEPTIM1,
+                              fill = ASTHMA)) +
+  geom_boxplot() +
+  scale_fill_hue(l = 40, c = 35)+
+  labs(x = "Asthma status",
+      y = "Sleep duration (hours)",
+      caption = "Data source: BRFSS2018") 
+ 
+sleptime_ASTHMA +  theme_boxplot
+```
+
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$ASTHMA)
+```
+
+
+```{r, fig.width = 5, fig.height = 5}
+sleptime_DEPRESSION <- ggplot(BRFSS, 
+                          aes(x = DEPRESSION, 
+                              y = SLEPTIM1,
+                              fill = DEPRESSION)) +
+  geom_boxplot() +
+  scale_fill_hue(l = 40, c = 35)+
+  labs(x = "Depressive disorder status",
+      y = "Sleep duration (hours)",
+      caption = "Data source: BRFSS2018") 
+ 
+sleptime_DEPRESSION + theme_boxplot
+```
+
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$CANCER)
+t.test(BRFSS$SLEPTIM1~BRFSS$ARTHRITIS)
+t.test(BRFSS$SLEPTIM1~BRFSS$DIABETE)
+t.test(BRFSS$SLEPTIM1~BRFSS$DEPRESSION)
+t.test(BRFSS$SLEPTIM1~BRFSS$PULMOND)
+t.test(BRFSS$SLEPTIM1~BRFSS$ASTHMA)
+t.test(BRFSS$SLEPTIM1~BRFSS$KIDNEY)
+t.test(BRFSS$SLEPTIM1~BRFSS$MICHD)
+```
+
+SLEPTIME and other risk factors (multiple levels)
+
+```{r}
+BRFSS %>% 
+  group_by(AGE) %>% 
+  dplyr::summarise(count = n(),
+              meanslpt =  mean(SLEPTIM1),
+            stdslpt = sd(SLEPTIM1))
+```
+
+```{r}
+library(ggpubr)
+```
+
+```{r}
+ggboxplot(BRFSS, 
+          x = "AGE", 
+          y = "SLEPTIM1",
+          fill = "AGE",
+          ylab = "Sleep duration (hours)", 
+          xlab = "Age group") +
+  theme_boxplot
+```
+
+```{r}
+# Compute the analysis of variance
+age.aov <- aov(SLEPTIM1 ~ AGE, data = BRFSS)
+# Summary of the analysis
+summary(age.aov)
+```
+As the p-value is less than the significance level 0.05, we can conclude that there are significant differences between the groups 
+```{r}
+TukeyHSD(age.aov)
+```
+
+```{r}
+# 1. Homogeneity of variances
+plot(age.aov, 1)
+```
+
+In the plot above, there is no evident relationships between residuals and fitted values (the mean of each groups), which is good. So, we can assume the homogeneity of variances.
+
+
+```{r}
+plot(age.aov, 2)
+```
+
+***SLEPTIM and GENDER***
+
+```{r, fig.width= 4, fig.height= 5}
+ggboxplot(BRFSS, 
+          x = "GENDER", 
+          y = "SLEPTIM1",
+          fill = "GENDER",
+          ylab = "Sleep duration (hours)", 
+          xlab = "Gender") +
+ theme_boxplot
+```
+
+```{r}
+t.test(BRFSS$SLEPTIM1~BRFSS$GENDER)
+```
+***SLEPTIME and INCOME***
+```{r, fig.width = 7.5, fig.height= 5}
+ggboxplot(BRFSS, 
+          x = "INCOME", 
+          y = "SLEPTIM1",
+          fill = "INCOME",
+          ylab = "Sleep duration (hours)", 
+          xlab = "Income range") +
+  theme_boxplot
+```
+
+```{r}
+BRFSS %>% 
+  group_by(INCOME) %>% 
+  dplyr::summarise(count = n(),
+              meanslpt =  mean(SLEPTIM1),
+            stdslpt = sd(SLEPTIM1)) %>% 
+  pander()
+```
+
+```{r}
+# Compute the analysis of variance
+income.aov <- aov(SLEPTIM1 ~ INCOME, data = BRFSS)
+# Summary of the analysis
+summary(income.aov)
+```
+H0 : There is no difference between group
+Ha : A least one of them is different
+p < 0.01 ==> reject the null hypothesis = accept the Ha
+
+```{r}
+TukeyHSD(income.aov)
+```
+
+***RACE and SLEPTIME
+```{r}
+BRFSS %>% 
+  group_by(RACE) %>% 
+  dplyr::summarise(count = n(),
+              meanslpt =  mean(SLEPTIM1),
+            stdslpt = sd(SLEPTIM1)) %>% 
+  pander()
+```
+
+```{r, fig.width = 7.5, fig.height= 5}
+ggboxplot(BRFSS, 
+          x = "RACE", 
+          y = "SLEPTIM1",
+          fill = "RACE",
+          ylab = "Sleep duration (hours)", 
+          xlab = "Race") +
+  theme_boxplot
+```
+
+
+```{r}
+# Compute the analysis of variance
+race.aov <- aov(SLEPTIM1 ~ RACE, data = BRFSS)
+# Summary of the analysis
+summary(race.aov)
+TukeyHSD(race.aov)
+```
+
+****Attribute and the outcome (MICHD)****
+
+```{r}
+geombar_facet <- geom_bar(aes(y = ..prop.., 
+                              fill = factor(..x..)), 
+                          stat="count",width = 1)
+geomtext_facet <- geom_text(size = 4, 
+                            aes(label = scales::percent(..prop..),
+                                y= ..prop.. ), 
+                            stat= "count", vjust = -.25)
+
+
+```
+
+***A1 REGION***
+```{r, fig.height= 5, fig.width= 6}
+ggplot(BRFSS, aes(x = MICHD , group = Region)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "peachpuff4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~Region) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+***A1 IDAY***
+```{r, fig.width= 20}
+ggplot(BRFSS, aes(x= MICHD , group = IDAY)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "peachpuff4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~IDAY) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+chisq.test(BRFSS$IDAY,BRFSS$MICHD)
+```
+```{r}
+CramerV(BRFSS$IDAY,BRFSS$MICHD)
+```
+very week.
+
+```{r}
+prop.test(table(BRFSS$IDAY, BRFSS$MICHD), correct = FALSE) 
+```
+
+***A2 MONTH***
+```{r, fig.height = 7, fig.width = 20}
+ggplot(BRFSS, aes(x= MICHD , group = MONTH)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "peachpuff4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~MONTH) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$MONTH, BRFSS$MICHD), correct=FALSE) 
+```
+*** p > 0.05 : Accept the null hypothesis: the proportion between group are the same
+
+
+```{r}
+chisq.test(BRFSS$MONTH,BRFSS$MICHD)
+```
+Ho : There is no difference between months
+Ha : There is different
+p = 0.06 - not in the rejection region = accept the null hypothesis
+
+
+```{r}
+CramerV(BRFSS$MONTH,BRFSS$MICHD)
+```
+No association at all.
+
+***Demographic***
+***B1.AGE and MICHD ***
+```{r, fig.height = 5, fig.width = 9}
+ggplot(BRFSS, aes(x = MICHD , group = AGE)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ AGE) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+MICHDage <- data.frame(
+  age_group = c("18-29","30-39","40-49", "50-59", "60-69","70-79","80+"),
+  Percentage = c(0.64, 1.44, 3.10, 6.78, 11.54, 17.64, 23.59))
+MICHDage
+```
+
+```{r, fig.height= 5.0, fig.width= 6}
+ggplot(data = MICHDage,
+           aes(x = age_group, 
+               y  = Percentage)) +
+  geom_bar(stat = "identity",
+           fill = "royalblue4",
+           width =  0.75)+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 4.5) +
+  scale_y_continuous(limits = c(0,25)) +
+  theme_minimal() +
+  labs(x = "Age group",
+       y = "Percentage (%)",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        plot.caption = element_text(color = "grey44", size = 12, face = "italic"),
+        legend.title = element_text(color = "black", size = 12),
+        legend.text = element_text(size = 12),
+        legend.position = "non")
+```
+
+
+***B2.GENDER and MICHD***
+```{r, fig.height= 5, fig.width= 4}
+ggplot(BRFSS, aes(x= MICHD , group = GENDER)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~GENDER) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+table(BRFSS$MICHD,BRFSS$GENDER)
+```
+
+```{r}
+prop.test(table(BRFSS$MICHD, BRFSS$GENDER), correct= FALSE) 
+```
+
+***RACE and MICHD***
+```{r, fig.height = 6, fig.width= 9}
+ggplot(BRFSS, aes(x= MICHD , group = RACE)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~RACE) +
+    scale_y_continuous(labels = scales::percent) + 
+  themebar_facet
+```
+
+```{r, fig.height= 5, fig.width = 6}
+ggplot(BRFSS, aes(x= MICHD , group = EDU)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ EDU) +
+    scale_y_continuous(labels = scales::percent) +
+ themebar_facet
+```
+
+
+
+
+```{r}
+MICHDedu <- data.frame(
+  edu_group = c("<8","9-12","12-15", "16+"),
+  Percentage = c(16.2, 11.2, 9.2, 6.5))
+MICHDedu
+```
+
+```{r, fig.height= 5.0, fig.width=4}
+
+positions <- c("<8","9-12","12-15", "16+")
+
+ggplot(data = MICHDedu ,
+           aes(x = positions, 
+               y  = Percentage)) +
+  geom_bar(stat = "identity",
+           fill = "royalblue4",
+           width = 0.6)+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 4.5) +
+  scale_x_discrete(limits = positions) +
+  scale_y_continuous(limits = c(0,20)) +
+  theme_minimal() +
+  labs(x = "Year of education categories",
+       y = "Percentage (%)",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        plot.caption = element_text(color = "grey44", size = 12, face = "italic"),
+        legend.title = element_text(color = "black", size = 12),
+        legend.text = element_text(size = 12),
+        legend.position = "non")
+```
+
+
+
+
+
+
+```{r, fig.height= 5, fig.width = 6}
+ggplot(BRFSS, aes(x= MICHD , group = RELP)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ RELP) +
+    scale_y_continuous(labels = scales::percent) +
+ themebar_facet
+```
+
+AGE and widowed
+
+
+```{r}
+BRFSS %>% 
+  group_by(AGE,RELP) %>% 
+  dplyr::count()
+```
+
+
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x= AGE, group = RELP)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat="count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col7) +
+    labs(y = "Percent of respondents", fill = "Age group") +
+    facet_grid(~ RELP) +
+    scale_y_continuous(labels = scales::percent) +
+  theme_bar
+```
+
+
+
+***B6. EMPL***
+```{r, fig.height = 5, fig.width = 6}
+ggplot(BRFSS, aes(x = MICHD , group = EMPL)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ EMPL) +
+  themebar_facet
+```
+
+
+
+
+
+```{r, fig.height= 8, fig.width= 16}
+ggplot(BRFSS, aes(x= AGE, group = EMPL)) + 
+    geom_bar(aes(y = ..prop.., 
+                 fill = factor(..x..)), 
+             stat = "count",
+             width = 0.8) +
+    geom_text(size = 4, 
+              aes(label = scales::percent(..prop..),
+                  y= ..prop.. ), 
+              stat= "count",
+              color = "blue",
+              vjust = -.25) +
+  scale_fill_manual(values= col7) +
+    labs(y = "Percent of respondents", fill = "Age group") +
+    facet_grid(~EMPL) +
+    scale_y_continuous(labels = scales::percent) +
+  theme_bar
+```
+
+
+
+***B7. Income levels (INCOME)***
+```{r, fig.height= 5, fig.width= 7.5}
+ggplot(BRFSS, aes(x= MICHD , group = INCOME)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ INCOME) +
+    scale_y_continuous(labels = scales::percent) + 
+  themebar_facet
+```
+
+
+
+```{r, fig.height= 5.0, fig.width= 6}
+MICHDincome <- data.frame(
+  edu_group = c("<$20K","$20K-<$35K","$35K-<$50K", "$50K-<$75K","$75K+"),
+  Percentage = c(14.9, 11.5,9.5, 7.8, 5.3))
+MICHDincome
+
+position_edu <- c("<$20K","$20K-<$35K","$35K-<$50K", "$50K-<$75K","$75K+")
+
+ggplot(data = MICHDincome,
+           aes(x = position_edu, 
+               y = Percentage)) +
+  geom_bar(stat = "identity",
+           fill = "royalblue4",
+           width = 0.6)+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 4.5) +
+  scale_x_discrete(limits = position_edu) +
+  scale_y_continuous(limits = c(0,18)) +
+  theme_minimal() +
+  labs(x = "Income levels",
+       y = "Percentage (%)",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        plot.caption = element_text(color = "grey44", size = 12, face = "italic"),
+        legend.title = element_text(color = "black", size = 12),
+        legend.text = element_text(size = 12),
+        legend.position = "non")
+```
+
+
+
+***B7. Income levels (INCOME)***
+```{r, fig.height= 5, fig.width= 5}
+ggplot(BRFSS, aes(x= MICHD , group = COMMUN)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "royalblue4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ COMMUN) +
+    scale_y_continuous(labels = scales::percent) + 
+  themebar_facet
+```
+
+**Lifestyle** (C)
+C1. X_SMOKER3 Four-level smoker status ---> SMOKESTAT
+C2. ALCDAY5 Days in past 30 had alcoholic beverage ---> ALCpa30
+C3. SLEPTIM1 How Much Time Do You Sleep
+C4. EXERANY2 Exercise in Past 30 Days 
+
+C1. X_SMOKER3 Four-level smoker status ---> SMOKESTAT
+
+```{r, fig.height= 5, fig.width= 6.5}
+ggplot(BRFSS, aes(x = MICHD , group = SMOKESTAT)) + 
+    geombar_facet +
+    geomtext_facet  +
+  scale_fill_manual(values = c("gainsboro", "olivedrab4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ SMOKESTAT) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$SMOKESTAT, BRFSS$MICHD), correct=FALSE) 
+```
+
+C2. ALCDAY5 Days in past 30 had alcoholic beverage ---> ALCpa30
+```{r, fig.height= 5, fig.width= 5}
+ggplot(BRFSS, aes(x = MICHD , group = ALCpa30)) + 
+    geombar_facet +
+    geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "olivedrab4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ ALCpa30) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$ALCpa30, BRFSS$MICHD), correct = FALSE) 
+```
+
+C3. SLEPTIM1 How Much Time Do You Sleep
+```{r, fig.height = 6, fig.width = 12}
+ggplot(BRFSS, aes(x = MICHD , group = SLEPTIM1)) + 
+   geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "olivedrab4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ SLEPTIM1) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$SLEPTIM1, BRFSS$MICHD), correct = FALSE) 
+```
+
+```{r}
+Sleep <- data.frame(
+  Duration =  c(3:12),
+  Percentage = c(18.49, 16.18, 10.35, 8.21, 6.68, 9.12, 10.93, 16.56, 14.67, 18.93)
+)
+
+Sleep
+```
+```{r}
+ggplot(data = Sleep, aes(x = duration,
+                        y = percentage)) +
+  geom_line(linetype = "dashed", 
+            size = 0.5) +
+  geom_point(size = 6, color = "blue") +
+  
+  labs(y = "Percent of respondents (%)", 
+       x = "Duration (h)") +
+  theme_point
+```
+
+```{r, fig.height= 5.0, fig.width= 7.5}
+ggplot(data = Sleep,
+           aes(x = Duration, 
+               y  = Percentage,
+               fill = Percentage)) +
+  scale_fill_gradient(low = "olivedrab4", high = "darkred")+
+  geom_bar(stat = "identity")+
+  geom_text(aes(label = paste0(Percentage,"%")), 
+            vjust = -0.5, 
+            color = "black", 
+            size = 4.5) +
+  scale_x_continuous(breaks = seq(0,14,by = 1))+
+  scale_y_continuous(limits = c(0,20)) +
+  theme_minimal() +
+  labs(x = "Sleep duration (h)",
+       y = "Percentage (%)",
+       caption = "Data source: BRFSS2018") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12, face = "bold"),
+        plot.caption = element_text(color = "grey44", size = 12, face = "italic"),
+        legend.title = element_text(color = "black", size = 12),
+        legend.text = element_text(size = 12),
+        legend.position = "non")
+```
+
+
+C4. EXERANY2 Exercise in Past 30 Days
+```{r, fig.height = 5, fig.width = 3.5}
+ggplot(BRFSS, aes(x= MICHD , group = EXERpa30)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "olivedrab4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ EXERpa30) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$EXERpa30, BRFSS$MICHD), correct=FALSE) 
+```
+
+**Health Status** (D)
+D1. GENHLTH
+```{r, fig.height = 5, fig.width = 7.5}
+ggplot(BRFSS, aes(x= MICHD , group = GENHLTH)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "orangered4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ GENHLTH) +
+    scale_y_continuous(labels = scales::percent)+ 
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$GENHLTH, BRFSS$MICHD), correct = FALSE) 
+```
+
+**Healthy Days** (E)— Health Related Quality of Life 
+E1.PHYSHLTH (Number of Days Physical Health Not Good)
+E2.MENTHLTH (Number of Days Mental Health Not Good)
+        
+```{r, fig.height = 5, fig.width = 4.5}
+ggplot(BRFSS, aes(x= MICHD , group = PHYSHLTHpa30)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "purple4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ PHYSHLTHpa30) +
+    scale_y_continuous(labels = scales::percent)+
+ themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$PHYSHLTHpa30, BRFSS$MICHD), correct = FALSE) 
+```
+
+```{r, fig.height = 5, fig.width = 4.5}
+ggplot(BRFSS, aes(x= MICHD , group = MENTHLTHpa30)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "purple4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ MENTHLTHpa30) +
+    scale_y_continuous(labels = scales::percent)+
+ themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$MENTHLTHpa30, BRFSS$MICHD), correct = FALSE) 
+```
+
+**Health Care Access** (F)
+F1. HPLN1 (Have any health care coverage) ==> HLTHPLN
+F2. MEDCOST (Could Not See Doctor Because of Cost) ==> MEDICOST
+F3. CHECKUP1  ==> CHECKUP
+
+```{r, fig.height = 5, fig.width = 3}
+ggplot(BRFSS, aes(x= MICHD , group = HLTHPLN)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ HLTHPLN) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r, fig.height= 5, fig.width= 3}
+ggplot(BRFSS, aes(x= MICHD , group = MEDICOST)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ MEDICOST) +
+    scale_y_continuous(labels = scales::percent)+
+themebar_facet
+```
+
+```{r, fig.height = 5, fig.width = 6}
+ggplot(BRFSS, aes(x= MICHD , group = CHECKUP)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ CHECKUP) +
+    scale_y_continuous(labels = scales::percent)+
+themebar_facet
+```
+
+```{r}
+BRFSS %>% 
+  group_by(CHECKUP, MICHD) %>% 
+  dplyr::count()
+```
+
+**Chronic Health Conditions** (G)
+G1. ASTHMA3 ==> ASTHMA
+G2. CHCCOPD1 ==> PULMOND
+G3. HAVARTH3 ==> ARTHRITIS
+G4. ADDEPEV2 ==> DEPRESSION
+G5. CHCKDNY1 ==> KIDNEY
+G6. DIABETE3 ==> DIABETE
+G7. CHCSCNCR,CHCOCNCR ==> CANCER
+
+```{r}
+BRFSS %>% 
+  select(ASTHMA, PULMOND,ARTHRITIS,DEPRESSION, KIDNEY,DIABETE,CANCER, MICHD) %>% 
+  group_by (MICHD) %>% 
+  count()
+```
+
+
+**G1. ASTHMA**
+```{r}
+table1 <- table(BRFSS$ASTHMA, BRFSS$MICHD)
+table1
+```
+
+```{r, fig.height= 5, fig.width= 3}
+ggplot(BRFSS, aes(x = MICHD , group = ASTHMA)) + 
+  geombar_facet +
+  geomtext_facet  +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ ASTHMA) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$ASTHMA, BRFSS$MICHD), correct = FALSE) 
+```
+
+***G2. PULMOND***
+```{r, fig.height= 5, fig.width = 3.5}
+ggplot(BRFSS, aes(x= MICHD , group = PULMOND)) + 
+  geombar_facet +
+  geomtext_facet  +
+  scale_fill_manual(values= c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ PULMOND) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$PULMOND, BRFSS$MICHD), correct = FALSE) 
+```
+
+***G3. ARTHRITIS***
+```{r, fig.height= 5, fig.width= 3}
+ggplot(BRFSS, aes(x = MICHD , group = ARTHRITIS)) + 
+  geombar_facet +
+  geomtext_facet  +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ ARTHRITIS) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$ARTHRITIS, BRFSS$MICHD), correct=FALSE) 
+```
+
+***G4. DEPRESSION***
+```{r, fig.height= 5, fig.width = 3}
+ggplot(BRFSS, aes(x = MICHD, group = DEPRESSION)) + 
+  geombar_facet +
+  geomtext_facet  +
+  scale_fill_manual(values= c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ DEPRESSION) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$DEPRESSION, BRFSS$MICHD), correct = FALSE) 
+```
+
+***G5.KIDNEY***
+```{r, fig.height = 5, fig.width = 3}
+ggplot(BRFSS, aes(x = MICHD , group = KIDNEY)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ KIDNEY) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$KIDNEY, BRFSS$MICHD), correct=FALSE) 
+```
+
+***G6. DIABETE3 ***==> DIABETE
+```{r, fig.height= 5, fig.width= 3}
+ggplot(BRFSS, aes(x = MICHD , group = DIABETE)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ DIABETE) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$DIABETE, BRFSS$MICHD), correct = FALSE) 
+```
+
+G7. CHCSCNCR,CHCOCNCR ==> CANCER
+```{r, fig.height = 5, fig.width = 3}
+ggplot(BRFSS, aes(x = MICHD , group = CANCER)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ CANCER) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$CANCER, BRFSS$MICHD), correct = FALSE) 
+```
+
+```{r, fig.height = 5, fig.width = 3}
+ggplot(BRFSS, aes(x = MICHD , group = STROKE)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "goldenrod4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ STROKE) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+
+```
+
+
+
+
+Among pp who have MICHD
+```{r}
+CHC <- c("ARTHRITIS", "ASHMA", " CANCER","DEPRESSION", "DIABETE","KIDNEY", "PULMON", "STROKE")
+CHC_NO <- c(7.0,9.6,8.7,9.4,8.0,9.0,8.0,8.0)
+CHC_YES <- c(17,14.9,17.9,14.3,23,32,30,36.0)
+```
+
+```{r}
+dataCHC <- cbind.data.frame(CHC, CHC_NO, CHC_YES)
+dataCHC
+```
+
+
+
+
+
+
+```{r}
+library(ggthemes)
+```
+
+```{r}
+CHC_MICHD <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/Chronic health.csv", header=TRUE, sep=",")
+```
+
+```{r}
+CHC_MICHD
+```
+
+
+```{r, fig.height= 10, fig.width= 8, dpi = 300}
+ggplot(CHC_MICHD, aes(CHC.status, MICHD.YES)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ï..ChronicHLTH, nrow = 2) +
+  geom_text(aes(label = paste0(MICHD.YES, "%"), 
+                y = MICHD.YES),
+            vjust = 1.4, 
+            size = 5, 
+            color = "white") +
+  theme(axis.text.x = element_text(angle = 90,  hjust = 1),
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank()) +
+  themebar_facet +
+   aes(fill = as.factor(CHC.status)) +
+  scale_fill_manual(values = c("#00AFBB", "goldenrod4")) +
+  labs(x = "Status (Yes/No) of chronic health condition",
+       y = "Percent of respondents (%)",
+       caption = "Data source: BRFSS2018") 
+```
+
+Among people having MICHD
+
+```{r, fig.height= 5, fig.width= 5}
+ggplot(CHC_MICHD, aes(CHC.status,ï..ChronicHLTH, 
+                      fill = MICHD.YES)) +
+  geom_tile(show.legend = TRUE) +
+  geom_text(aes(label = paste0(MICHD.YES, "%")), color = "white") +
+  labs(x = "Chronic Health Conditions Status",
+    y = "Chronic Health Conditions",
+    color = "Having MICHD") +
+  theme(axis.text = element_text(size = 12, color = "black"),
+        axis.title = element_text(size = 12, face="bold"),
+        plot.caption = element_text(color = "grey", size = 12, face = "italic"))
+```
+
+**Oral Health** (H)
+H1. RMVTETH4 ==> RMVTETH
+H2. LASTDEN4 ===> LASTDEN
+
+H1. RMVTETH4 ==> RMVTETH
+```{r, fig.height= 5, fig.width= 6}
+ggplot(BRFSS, aes(x = MICHD , group = RMVTETH)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values = c("gainsboro", "seagreen4")) +
+    labs(y = "Percent of respondents", fill = "MICHD") +
+    facet_grid(~ RMVTETH) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$RMVTETH, BRFSS$MICHD), correct = FALSE)
+```
+
+H2. LASTDEN4 ===> LASTDENTV
+```{r, fig.height = 5, fig.width = 6}
+ggplot(BRFSS, aes(x= MICHD , group = LASTDENTV)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "seagreen4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ LASTDENTV) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$LASTDENTV, BRFSS$MICHD), correct=FALSE)
+```
+
+***BMICAT (I)***
+I1. X_BMI5CAT ===> BMICAT
+```{r, fig.height = 5, fig.width = 6}
+ggplot(BRFSS, aes(x= MICHD , group = BMICAT)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "firebrick4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ BMICAT) +
+    scale_y_continuous(labels = scales::percent) +
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$BMICAT, BRFSS$MICHD), correct = FALSE)
+```
+
+***COMMUNITY*** (J)
+```{r, fig.height= 5, fig.width= 4.5}
+ggplot(BRFSS, aes(x= MICHD , group = COMMUN)) + 
+  geombar_facet +
+  geomtext_facet +
+  scale_fill_manual(values= c("gainsboro", "cyan4")) +
+    labs(y = "Percent of respondents", fill="MICHD") +
+    facet_grid(~ COMMUN) +
+    scale_y_continuous(labels = scales::percent)+
+  themebar_facet
+```
+
+```{r}
+prop.test(table(BRFSS$COMMUN,BRFSS$MICHD), correct = FALSE) 
+```
+
+***Correlation analysis***
+
+```{r}
+# Subsetting the data and selecting only required variables
+BRFSS_COR_N <- BRFSS[, c("SLEPTIM1")]
+```
+
+```{r}
+library(GGally)
+```
+Correlation between categorical attributes
+
+```{r}
+drop_numeric <- c("SLEPTIM1", "IDAY")
+BRFSS_COR_F <- BRFSS[ ,!(names(BRFSS) %in% drop_numeric)]
+```
+
+```{r}
+for (i in 1:length(BRFSS_COR_F)) {
+  BRFSS_COR_F[,i] <- as.integer(as.factor(BRFSS_COR_F[,i]))
+}
+```
+
+```{r, fig.height= 20,  fig.width= 20}
+corrplot(cor(BRFSS_COR_F), method="number", is.corr = FALSE)
+```
+
+```{r}
+cormat <- round(cor(BRFSS_COR_F),2)
+head(cormat)
+```
+
+```{r}
+library(reshape2)
+```
+```{r}
+melted_cormat <- melt(cormat)
+head(melted_cormat)
+```
+
+
+```{r, fig.height = 10, fig.width= 15}
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+```
+
+```{r}
+# Get upper triangle of the correlation matrix
+  get_upper_tri <- function(cormat){
+    cormat[lower.tri(cormat)]<- NA
+    return(cormat)
+  }
+```
+
+```{r}
+upper_tri <- get_upper_tri(cormat)
+```
+
+```{r}
+melted_cormat2 <- melt(upper_tri, na.rm = TRUE)
+melted_cormat2
+```
+
+```{r, fig.height = 15, fig.width= 15}
+# Heatmap
+library(ggplot2)
+ggheatmap <- ggplot(data = melted_cormat2, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed() 
+
+
+ggheatmap 
+```
+
+```{r, fig.height = 15, fig.width= 15}
+ggheatmap + 
+geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) +
+theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.6, 0.7),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

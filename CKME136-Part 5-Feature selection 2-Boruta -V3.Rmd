@@ -1,0 +1,119 @@
+---
+title: "CKME136-Part 5-Feature selection 2 - Boruta - as of 14-03-2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+
+```{r}
+library(knitr)
+```
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+
+```{r}
+str(BRFSS29_SmoteV3)
+```
+
+
+```{r}
+library(Boruta)
+```
+
+```{r}
+boruta <- Boruta(MICHD ~., data = BRFSS29_SmoteV3, pValue = 0.05, doTrace = 0,
+                 getImp = getImpRfZ)
+print(boruta)
+```
+
+```{r}
+HistoryBuruta <-  boruta$ImpHistory
+HistoryBuruta 
+```
+ 
+```{r}
+write.csv(HistoryBuruta, file="HistoryBuruta-V3.csv", row.names = FALSE)
+```
+ 
+
+ 
+```{r, fig.height= 7.5, fig.width= 10}
+plot(boruta, xlab = "", xaxt = "n")
+lz <-lapply(1:ncol(boruta$ImpHistory), function(i)
+  boruta$ImpHistory[is.finite(boruta$ImpHistory[, i]), i])
+names(lz)<- colnames(boruta$ImpHistory)
+lb <- sort(sapply(lz, median))
+axis(side=1, las=2, labels=names(lb), at=1:ncol(boruta$ImpHistory), cex.axis = 0.5, font = 4)
+```
+
+The important score
+AGE
+PULMOND
+DIABETE
+EMPL
+KIDNEY
+PHYSHLTHpa30
+
+ARTHRITIS
+
+RMVTETH
+MEDICOST
+CANCER
+LASDENTV
+GENDER
+GEHLTH
+INCOME
+ASTHMA
+MARSTAT
+MENTHLTHpa30
+SMOKERSTAT
+DEPRESSION
+SLEPTIM1
+HLTHPLN
+EXERpa30
+RENTHOME
+RACE
+ALCWEEK
+EDU
+CHECKUP
+METROSTAT
+URBSTAT
+BMICAT
+URBSTAT
+
+```{r}
+final.boruta <- TentativeRoughFix(boruta)
+print(final.boruta)
+```
+
+```{r}
+getConfirmedFormula(final.boruta)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

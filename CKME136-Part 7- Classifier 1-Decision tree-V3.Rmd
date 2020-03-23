@@ -1,0 +1,124 @@
+---
+title: "CKME136-Part 7- Classifier 1- Decision tree"
+author: "Minh Trung DANG"
+date: "12/03/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+BRFSS29_Smote <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+str(BRFSS29_Smote)
+```
+
+```{r}
+library(caret)
+```
+
+```{r}
+Trainindex <- createDataPartition(y = BRFSS29_Smote$MICHD , p = .70, list = FALSE)
+training <- BRFSS29_Smote[Trainindex ,]
+validation <- BRFSS29_Smote[-Trainindex,]
+```
+
+```{r}
+training_new <- training[-32]
+validation_new <- validation[-32]
+```
+
+```{r}
+MICHD_training_label <- training$MICHD
+MICHD_validation_label <- validation$MICHD
+```
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+Fully grown trees
+
+```{r}
+fulltree <- rpart(MICHD ~ AGE + EMPL+ GENHLTH + DIABETE +  PULMOND + STROKE +
+                RMVTETH + LASTDENTV, 
+                    data = training,
+                    method = "class")
+```
+
+```{r, fig.height= 7.5}
+# Plot the trees
+fancyRpartPlot(fulltree, caption = NULL)
+```
+
+GENHLTH, EMPL, PULMON, STROKE, DIABETE
+
+```{r}
+# Make predictions on the test data
+predicted.classes <- fulltree %>% 
+  predict(validation, type = "class")
+head(predicted.classes)
+```
+```{r}
+# Compute model accuracy rate on test data
+mean(predicted.classes == validation$MICHD)
+```
+The accuracy is 0.75
+
+#Confusion matrix
+```{r}
+library(caret)
+```
+
+```{r}
+confusionMatrix(predicted.classes, validation$MICHD)
+```
+
+The three looks very simple. Do we need to prune the tree ?
+
+One possible robust strategy of pruning the tree (or stopping the tree to grow) consists of avoiding splitting a partition if the split does not significantly improves the overall quality of the model.
+In rpart package, this is controlled by the complexity parameter (cp), which imposes a penalty to the tree for having two many splits. The default value is 0.01. The higher the cp, the smaller the tree.
+
+A too small value of cp (larger tree) leads to overfitting and a too large cp value will result to a too small tree. Both cases decrease the predictive performance of the model.
+
+An optimal cp value can be estimated by testing different cp values and using cross-validation approaches to determine the corresponding prediction accuracy of the model. The best cp is then defined as the one that maximize the cross-validation accuracy 
+
+trControl, to set up 10-fold cross validation
+tuneLength, to specify the number of possible cp values to evaluate. Default value is 3, here we’ll use 10.
+
+
+```{r}
+# Fit the model on the training set
+set.seed(123)
+fulltree2 <- train(MICHD ~ AGE + EMPL+ GENHLTH + DIABETE +  PULMOND + STROKE +
+                RMVTETH + LASTDENTV,
+                data = training, 
+                method = "rpart",
+                trControl = trainControl("cv", number = 10),
+                tuneLength = 100)
+
+# Plot model accuracy vs different values of
+# cp (complexity parameter)
+plot(fulltree2)
+```
+
+
+```{r}
+# Print the best tuning parameter cp that
+# maximizes the model accuracy
+fulltree2$bestTune
+```
+
+
+
+
+
+
+
+
+

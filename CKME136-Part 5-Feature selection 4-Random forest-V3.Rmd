@@ -1,0 +1,59 @@
+---
+title: "CKME136-Part 5-Feature selection 4-Random forest-as of 10-03-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+library(randomForest)
+```
+
+
+# Using random forest for variable selection
+```{r}
+rfModel_V3 <-randomForest(MICHD ~ ., data = BRFSS29_SmoteV3)
+```
+# Getting the list of important variables
+
+```{r}
+rfModel_V3
+```
+The higher the value of mean decrease accuracy or mean decrease gini score, the higher the importance of the variable to our model.
+```{r}
+# Getting the list of important variables
+importance(rfModel_V3)
+```
+Above the median
+
+Region  
+AGE        
+RELP
+EDU       
+EMPL   
+INCOME    
+SMOKESTAT     
+SLEPTIM1        
+GENHLTH
+PHYSHLTHpa30  
+DIABETE
+PUMOND
+STROKE
+LASTDENTV
+RMVTETH
+BMICAT
+
+
+
+
+
+

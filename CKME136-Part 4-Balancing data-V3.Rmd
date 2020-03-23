@@ -1,0 +1,58 @@
+---
+title: "CKME136-Part 4-Balancing data- as of 10-03-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+getwd()
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(MASS)
+library(gtools)
+library(ggplot2)
+library(GGally)
+library(DMwR)
+```
+
+
+```{r}
+BRFSS_train29 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/train29-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+BRFSS_train29 <- subset(BRFSS_train29, select = -c(IDAY))
+BRFSS_train29 <- subset(BRFSS_train29, select = -c(MONTH))
+str(BRFSS_train29) 
+```
+
+
+```{r}
+train29_smote <- SMOTE(MICHD ~ ., BRFSS_train29, perc.over = 100, perc.under = 200)
+
+str(train29_smote)
+
+write.csv(train29_smote, file = "BRFSS29-Smote-V3.csv", row.names = FALSE)
+```
+
+```{r}
+BRFSS %>% 
+  group_by(MICHD) %>% 
+  dplyr::count()
+```
+
+```{r}
+BRFSS29_Smote <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+BRFSS29_Smote %>% 
+  group_by(MICHD) %>% 
+  dplyr::count()
+```

@@ -1,0 +1,89 @@
+---
+title: "CKME136-Part 5-Feature selection 3- Recursive Feature Elemination- as of 14-03-2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+str(BRFSS29_SmoteV3)
+```
+
+
+```{r}
+library(caret)
+```
+
+```{r}
+set.seed(123)
+controlRFE <-  rfeControl(functions = rfFuncs, method = "repeatedcv", number = 10, repeats = 1 )
+```
+
+Since we deal with balanced dataset, we can use the accuracy. 
+```{r}
+rfe_BRFSS29 <- rfe(BRFSS29_SmoteV3[,-32], BRFSS29_SmoteV3$MICHD, size = c(5,10,15,20,30,31), rfeControl = controlRFE)
+```
+
+
+```{r}
+print(rfe_BRFSS29)
+```
+
+```{r}
+rfe_BRFSS29$optVariables
+```
+
+```{r}
+# list the chosen features
+predictors(rfe_BRFSS29)
+```
+plot the results
+
+```{r}
+plot(rfe_BRFSS29, type=c("g", "o"))
+```
+
+```{r}
+# Calculating variable importance
+varImp(rfe_BRFSS29)
+```
+
+RANDOM forest using caret
+
+
+```{r}
+x <- BRFSS29_SmoteV3[,-32]
+y <- BRFSS29_SmoteV3$MICHD
+
+controlrf <- trainControl(method='repeatedcv', 
+                        number = 10, 
+                        repeats = 1)
+metric <- "Accuracy"
+set.seed(123)
+
+mtry <- sqrt(ncol(x))
+tunegrid <- expand.grid(.mtry=mtry)
+
+rf_default <- train(MICHD ~., 
+                      data = BRFSS29_SmoteV3 , 
+                      method = 'rf', 
+                      metric = 'Accuracy', 
+                      tuneGrid = tunegrid, 
+                      trControl = controlrf)
+print(rf_default)
+```
+
+
+
+
+
+
+

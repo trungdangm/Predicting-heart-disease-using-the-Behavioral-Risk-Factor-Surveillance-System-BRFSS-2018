@@ -1,0 +1,172 @@
+---
+title: "CKME136-Part 7-Classifier 2-Random forest"
+author: "Minh Trung DANG"
+date: "13/03/2020"
+output:
+  word_document: default 
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+library(tidyverse)
+library(caret)
+library(randomForest)
+library(mlbench)
+```
+
+```{r}
+BRFSS29_Selected <- BRFSS29_SmoteV3 %>% 
+  select(AGE, EMPL, GENHLTH , DIABETE ,  PULMOND , STROKE ,
+                RMVTETH , LASTDENTV, MICHD)
+```
+
+```{r}
+Index <- createDataPartition(y = BRFSS29_Selected$MICHD , p = .70, list = FALSE)
+training <- BRFSS29_Selected[Index,]
+validation <- BRFSS29_Selected[-Index,]
+```
+
+Creating a Random Forest model with default parameters
+
+```{R}
+RF_m1 <- randomForest(MICHD ~ ., 
+                       data = training, importance = TRUE)
+RF_m1
+```
+
+
+Another way
+```{r}
+# Random Search
+x <- training[,1:8]
+y <- training[,9]
+```
+
+```{r}
+# Creating model with default paramters
+control <- trainControl(method = "repeatedcv", 
+                        number = 10, 
+                        repeats = 1)
+seed <- 7
+metric <- "Accuracy"
+set.seed(seed)
+mtry <- sqrt(ncol(x))
+tunegrid <- expand.grid(.mtry=mtry)
+
+rf_default <- train(MICHD~., data = training, 
+                    method = "rf",
+                    metric = metric, 
+                    tuneGrid = tunegrid, 
+                    trControl = control)
+print(rf_default)
+```
+
+
+Random Search
+```{r}
+control2 <- trainControl(method = "repeatedcv", 
+                         number = 10, 
+                         repeats = 1, 
+                         search = "random")
+set.seed(seed)
+mtry <- sqrt(ncol(x))
+
+rf_random <- train(MICHD ~., 
+                   data = training, 
+                   method = "rf", 
+                   metric = metric, 
+                   tuneLength = 15, 
+                   trControl = control2)
+
+print(rf_random)
+```
+```{r}
+plot(rf_random)
+```
+
+Grid search
+
+```{r}
+control3 <- trainControl(method = "repeatedcv", 
+                         number = 10, 
+                         repeats = 1, 
+                         search = "grid")
+set.seed(seed)
+tunegrid <- expand.grid(.mtry=c(1:15))
+
+rf_gridsearch <- train(MICHD~., data = training, 
+                       method = "rf", 
+                       metric = metric, 
+                       tuneGrid = tunegrid, 
+                       trControl = control3)
+
+print(rf_gridsearch)
+```
+
+
+```{r}
+plot(rf_gridsearch)
+```
+
+
+Tuning by Using Algorithm Tools
+
+```{r}
+# Algorithm Tune (tuneRF)
+set.seed(seed)
+
+bestmtry <- tuneRF(x, y, stepFactor = 1.5, improve = 1e-5, ntree = 500)
+```
+
+```{r}
+print(bestmtry)
+```
+
+
+Manual Search
+
+```{r}
+control4 <- trainControl(method = "repeatedcv", 
+                         number = 10, 
+                         repeats = 1 , 
+                         search = "grid")
+
+tunegrid <- expand.grid(.mtry=c(sqrt(ncol(x))))
+
+modellist <- list()
+
+for (ntree in c(500,1000, 1500, 2000, 2500, 3000)) {
+	set.seed(seed)
+	fit <- train(MICHD ~., 
+	             data = training , 
+	             method = "rf", 
+	             metric = metric, 
+	             tuneGrid = tunegrid, 
+	             trControl = control, ntree = ntree)
+	key <- toString(ntree)
+	modellist[[key]] <- fit
+}
+```
+
+
+```{r}
+results <- resamples(modellist)
+summary(results)
+```
+
+```{r}
+dotplot(results)
+```
+
+
+
+
+

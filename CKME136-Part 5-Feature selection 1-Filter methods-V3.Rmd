@@ -1,0 +1,191 @@
+---
+title: "CKME136-Part 5-Feature selection 1-Filter methods-as of 10-03-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+BRFSS29_SmoteV3  <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+str(BRFSS29_SmoteV3)
+```
+
+```{r}
+library(CORElearn)
+library(FSelector)
+library(RWeka)
+```
+
+```{r}
+IG.CORElearn <- attrEval(MICHD ~ ., data = BRFSS29_SmoteV3,  estimator = "InfGain")
+
+IG.CORElearn
+```
+
+
+```{r}
+IG.FSelector <- information.gain(MICHD ~ ., data = BRFSS29_SmoteV3,  unit="log2")
+IG.FSelector
+```
+
+```{r}
+IG.RWeka <- InfoGainAttributeEval(MICHD ~ ., data = BRFSS29_SmoteV3)
+IG.RWeka
+```
+
+
+The random.forest.importance function is used to rate the importance of each feature in the classification of the outcome, MICHD. The function returns a data frame containing the name of each attribute and the importance value based on the mean decrease in accuracy.
+
+
+```{r}
+att.scores1 <-  random.forest.importance(MICHD ~ ., data = BRFSS29_SmoteV3, importance.type = 1)
+att.scores1
+```
+
+
+```{r}
+att.scores2 <-  random.forest.importance(MICHD ~ ., data = BRFSS29_SmoteV3,  importance.type = 2)
+att.scores2
+```
+
+
+Chisquared-test
+
+```{r}
+library(MASS)
+library(gtools)
+```
+
+```{r}
+ChiTest <- defmacro(VarName, TblName, 
+                    expr={TblName = table(BRFSS29_SmoteV3$VarName,BRFSS29_SmoteV3$MICHD); 
+chisq.test(TblName)})
+```
+
+
+
+
+```{r}
+ChiTest(Region, regionTblChisquare)
+
+ChiTest(AGE,AGETblChisquare)
+ChiTest(GENDER,SEXTblChisquare)
+ChiTest(RACE, RACETblChisquare)
+ChiTest(RELP, RELPTblChisquare)
+ChiTest(EDU, EDUTblChisquare)
+ChiTest(INCOME, INCOMETblChisquare)
+ChiTest(EMPL, EMPLOYMENTTblChisquare)
+ChiTest(RENTHOME, RENTHOMETblChisquare)
+ChiTest(COMMUN,COMMUNTblChisquare)
+
+ChiTest(ALCpa30, ALCpa30TblChisquare)
+ChiTest(SMOKESTAT,SMOKESTATTblChisquare)
+ChiTest(EXERpa30, EXERpa30TblChisquare)
+
+ChiTest(GENHLTH, GENHLTHChisquare)
+
+ChiTest(PHYSHLTHpa30, PHYSHLTHpa30Chisquare)
+ChiTest(MENTHLTHpa30, MENTHLTHpa30TblChisquare)
+
+ChiTest(HLTHPLN, HLTHPLNTblChisquare)
+ChiTest(MEDICOST,MEDICOSTTblChisquare)
+ChiTest(CHECKUP, CHECKUPTblChisquare)
+
+ChiTest(ASTHMA, ASTHMATblChisquare)
+ChiTest(PULMOND, PULMONDTblChisquare)
+ChiTest(ARTHRITIS, ARTHRITISTblChisquare)
+ChiTest(DEPRESSION, DEPRESSIONTblChisquare)
+ChiTest(KIDNEY, KIDNEYTblChisquare)
+ChiTest(DIABETE, DIABETETblChisquare)
+ChiTest(CANCER , CANCERTblChisquare)
+ChiTest(STROKE, STROKETblChisquare)
+
+
+ChiTest(RMVTETH, RMVTETHTblChisquare)
+ChiTest(LASTDENTV, LASTDENTVTblChisquare)
+
+ChiTest(BMICAT, BMICATTblChisquare)
+```
+
+```{r}
+library(gtools)
+library(DescTools)
+```
+
+
+```{r}
+CramerVtest <- defmacro(VarName, TblName,
+                        expr={TblName = table(BRFSS29_SmoteV3$VarName,BRFSS29_SmoteV3$MICHD); 
+CramerV(TblName)})
+```
+
+```{r}
+CramerVtest (Region, regionTblCramerV)
+
+CramerVtest (AGE,AGETblCramerV)
+CramerVtest (GENDER,SEXTblCramerV)
+CramerVtest (RACE, RACETblCramerV)
+CramerVtest (RELP, RELPTblCramerV)
+CramerVtest (EDU, EDUTblCramerV)
+CramerVtest (INCOME, INCOMETblCramerV)
+CramerVtest (EMPL, EMPLOYMENTTblCramerV)
+CramerVtest (RENTHOME, RENTHOMETblCramerV)
+```
+
+```{r}
+CramerVtest (COMMUN,METROSTATTblCramerV)
+```
+
+```{r}
+CramerVtest (ALCpa30, ALCWpa30TblCramerV)
+CramerVtest (SMOKESTAT,SMOKESTATTblCramerV)
+CramerVtest (EXERpa30, EXERpa30TblCramerV)
+```
+
+```{r}
+CramerVtest (GENHLTH, GENHLTHCramerV)
+CramerVtest (PHYSHLTHpa30, PHYSHLTHpa30CramerV)
+CramerVtest (MENTHLTHpa30, MENTHLTHpa30TblCramerV)
+```
+
+```{r}
+CramerVtest (HLTHPLN, HLTHPLNTblCramerV)
+CramerVtest (MEDICOST,MEDICOSTTblCramerV)
+CramerVtest (CHECKUP, CHECKUPTblCramerV)
+```
+
+
+```{r}
+CramerVtest (ASTHMA, ASTHMATblCramerV)
+CramerVtest (PULMOND, PULMONDTblCramerV)
+CramerVtest (ARTHRITIS, ARTHRITISTblCramerV)
+CramerVtest (DEPRESSION, DEPRESSIONTblCramerV)
+CramerVtest (KIDNEY, KIDNEYTblCramerV)
+CramerVtest (DIABETE, DIABETETblCramerV)
+CramerVtest (CANCER , CANCERTblCramerV)
+CramerVtest (STROKE , STROKETblCramerV)
+```
+
+```{r}
+CramerVtest (RMVTETH, RMVTETHTblCramerV)
+CramerVtest (LASTDENTV, LASTDENTVTblCramerV)
+```
+
+```{r}
+CramerVtest (BMICAT, BMICATTblCramerV)
+```
+
+
+```{r}
+CramerVtest (SLEPTIM1, SLEPTIM1TblCramerV)
+```
+Note : SLEPTIME1 is numeric 
+
+
+

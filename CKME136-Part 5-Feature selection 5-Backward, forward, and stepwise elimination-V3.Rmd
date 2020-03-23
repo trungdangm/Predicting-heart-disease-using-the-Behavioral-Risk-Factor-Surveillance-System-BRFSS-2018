@@ -1,0 +1,40 @@
+---
+title: "CKME136-Part 5-Feature selection 5-Backward, forward, and stepwise elimination-as of 14-03-2020"
+output: html_notebook
+---
+
+
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv", header=TRUE, sep=",")
+```
+
+```{r}
+library(MASS)
+```
+
+```{r}
+full <- glm(MICHD~., family = binomial, data = BRFSS29_SmoteV3)
+
+summary(full)
+```
+
+```{r}
+step <- stepAIC(full, trace = FALSE)
+step$anova
+```
+
+
+```{r}
+forward <- stepAIC(full, direction = "forward", trace = TRUE)
+
+forward$anova
+```
+
+
+
+```{r}
+backward <- stepAIC(full, direction ="backward", trace = TRUE)
+
+backward$anova
+```

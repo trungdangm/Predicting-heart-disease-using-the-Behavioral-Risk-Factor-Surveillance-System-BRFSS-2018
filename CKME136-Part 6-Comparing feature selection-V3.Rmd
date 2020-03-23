@@ -1,0 +1,840 @@
+---
+title: "CKME136-Part 6-Comparing feature selection"
+author: "Minh Trung DANG"
+date: "11/03/2020"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(knitr)
+```
+
+
+```{r}
+BRFSS29_SmoteV3 <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS29-Smote-V3.csv",
+                            header = TRUE, 
+                            sep=",")
+```
+
+
+```{r}
+str(BRFSS29_SmoteV3)
+```
+
+```{r}
+library(caret)
+```
+
+```{r}
+Index <- createDataPartition(y = BRFSS29_SmoteV3$MICHD , p = .70, list = FALSE)
+train <- BRFSS29_SmoteV3[Index,]
+valid <- BRFSS29_SmoteV3[-Index,]
+```
+
+```{r}
+train_new <- train[-32]
+valid_new <- valid[-32]
+```
+
+```{r}
+train_label <- train$MICHD
+valid_label <- valid$MICHD
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+# Information Gain
+set1t <- train %>% 
+  dplyr::select(AGE, EMPL, INCOME, 
+                SMOKESTAT, EXERpa30, 
+                GENHLTH, PHYSHLTHpa30 , 
+                MEDICOST, 
+                ARTHRITIS, 
+                CANCER, DIABETE,  KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+# Recursive Feature Elemination
+set2t <- train  %>% 
+  dplyr::select(Region,
+                AGE, GENDER, EMPL, 
+                SMOKESTAT, SLEPTIM1,
+                GENHLTH,
+                MEDICOST,
+                ASTHMA, CANCER, DIABETE, KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+# Boruta
+set3t <- train  %>% 
+  dplyr::select(AGE, GENDER, EMPL, INCOME,
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                ARTHRITIS, ASTHMA, CANCER, DIABETE, KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+
+# Random forest, mean decrease in accuracy
+set4t <- train  %>% 
+  dplyr::select(AGE, GENDER, RELP, EMPL, INCOME,
+                SMOKESTAT,
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                ARTHRITIS, DIABETE, KIDNEY, PULMOND, STROKE,
+                LASTDENTV, RMVTETH,
+                MICHD)
+
+# Random forest, mean decrease in node impurity
+set5t <- train  %>% 
+  dplyr::select(Region,
+                AGE, RELP, EMPL, EDU, INCOME,
+                 SMOKESTAT, SLEPTIM1,
+                 GENHLTH,
+                 PHYSHLTHpa30,
+                 DIABETE, PULMOND, STROKE,
+                 LASTDENTV, RMVTETH,
+                 BMICAT,
+                 MICHD)
+
+# 5 
+set6t <- train  %>% 
+  dplyr::select(AGE, EMPL, 
+                GENHLTH, 
+                DIABETE, PULMOND, STROKE, 
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+
+# 4 + 5
+set7t <- train  %>% 
+  dplyr::select(AGE, EMPL, INCOME,
+                SMOKESTAT, 
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                DIABETE, KIDNEY, PULMOND, STROKE, 
+                RMVTETH, LASTDENTV,
+                MICHD)
+```
+
+```{r}
+# Information Gain
+set1v <- valid %>% 
+  dplyr::select(AGE, EMPL, INCOME, 
+                SMOKESTAT, EXERpa30, 
+                GENHLTH, PHYSHLTHpa30 , 
+                MEDICOST, 
+                ARTHRITIS, 
+                CANCER, DIABETE,  KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+# Recursive Feature Elemination
+set2v <- valid  %>% 
+  dplyr::select(Region,
+                AGE, GENDER, EMPL, 
+                SMOKESTAT, SLEPTIM1,
+                GENHLTH,
+                MEDICOST,
+                ASTHMA, CANCER, DIABETE, KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+# Boruta
+set3v <- valid  %>% 
+  dplyr::select(AGE, GENDER, EMPL, INCOME,
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                ARTHRITIS, ASTHMA, CANCER, DIABETE, KIDNEY, PULMOND, STROKE,
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+
+# Random forest, mean decrease in accuracy
+set4v <- valid  %>% 
+  dplyr::select(AGE, GENDER, RELP, EMPL, INCOME,
+                SMOKESTAT,
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                ARTHRITIS, DIABETE, KIDNEY, PULMOND, STROKE,
+                LASTDENTV, RMVTETH,
+                MICHD)
+
+# Random forest, mean decrease in node impurity
+set5v <- valid  %>% 
+  dplyr::select(Region,
+                AGE, RELP, EMPL, EDU, INCOME,
+                 SMOKESTAT, SLEPTIM1,
+                 GENHLTH,
+                 PHYSHLTHpa30,
+                 DIABETE, PULMOND, STROKE,
+                 LASTDENTV, RMVTETH,
+                 BMICAT,
+                 MICHD)
+
+# 5 
+set6v <- valid  %>% 
+  dplyr::select(AGE, EMPL, 
+                GENHLTH, 
+                DIABETE, PULMOND, STROKE, 
+                RMVTETH, LASTDENTV,
+                MICHD)
+
+
+# 4 + 5
+set7v <- valid  %>% 
+  dplyr::select(AGE, EMPL, INCOME,
+                SMOKESTAT, 
+                GENHLTH,
+                PHYSHLTHpa30,
+                MEDICOST,
+                DIABETE, KIDNEY, PULMOND, STROKE, 
+                RMVTETH, LASTDENTV,
+                MICHD)
+```
+
+
+***Logistic regression
+
+```{r}
+ctrlLgR <- trainControl(method = "repeatedcv", 
+                       number = 10, 
+                       savePredictions = TRUE)
+```
+
+***MODEL 1***
+```{r}
+lgr_s1 <- train(MICHD ~ ., 
+                data = set1t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s1 <- predict(lgr_s1, newdata = set1v)
+
+confusionMatrix(data = p_lgr_s1, set1v$MICHD)
+```
+
+***MODEL 2***
+```{r}
+lgr_s2 <- train(MICHD ~ ., 
+                data = set2t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s2 <- predict(lgr_s2, newdata = set2v)
+
+confusionMatrix(data = p_lgr_s2, set2v$MICHD)
+```
+
+***MODEL 3***
+```{r}
+lgr_s3 <- train(MICHD ~ ., 
+                data = set3t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s3 <- predict(lgr_s3, newdata = set3v)
+
+confusionMatrix(data = p_lgr_s3, set3v$MICHD)
+```
+
+***MODEL 4***
+```{r}
+lgr_s4 <- train(MICHD ~ ., 
+                data = set4t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s4 <- predict(lgr_s4, newdata = set4v)
+
+confusionMatrix(data = p_lgr_s4, set4v$MICHD)
+```
+
+***MODEL 5***
+```{r}
+lgr_s5 <- train(MICHD ~ ., 
+                data = set5t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s5 <- predict(lgr_s5, newdata = set5v)
+
+confusionMatrix(data = p_lgr_s5, set5v$MICHD)
+```
+
+***MODEL 6***
+```{r}
+lgr_s6 <- train(MICHD ~ ., 
+                data = set6t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s6 <- predict(lgr_s6, newdata = set6v)
+
+confusionMatrix(data = p_lgr_s6, set6v$MICHD)
+```
+
+***MODEL 7***
+```{r}
+lgr_s7 <- train(MICHD ~ ., 
+                data = set7t,
+                method = "glm", 
+                family = "binomial",
+                trControl = ctrlLgR, 
+                tuneLength = 5)
+
+p_lgr_s7 <- predict(lgr_s7, newdata = set7v)
+
+confusionMatrix(data = p_lgr_s7, set7v$MICHD)
+```
+
+
+****DECISION TREE****
+***CART***
+Classification and Regression Trees (CART) split attributes based on values that minimize a loss function, such as sum of squared errors.
+
+```{r}
+library(rpart)
+```
+
+```{r}
+cart1 <- rpart(MICHD ~ .,
+                data = set1t)
+
+p_cart1 <- predict(cart1, newdata = set1v, type = "class")
+
+confusionMatrix(data = p_cart1, set1v$MICHD)
+```
+
+```{r}
+cart2 <- rpart(MICHD ~ .,
+                data = set2t)
+
+p_cart2 <- predict(cart2, newdata = set2v, type = "class")
+
+confusionMatrix(data = p_cart2, set2v$MICHD)
+```
+
+```{r}
+cart3 <- rpart(MICHD ~ .,
+                data = set3t)
+
+p_cart3 <- predict(cart3, newdata = set3v, type = "class")
+
+confusionMatrix(data = p_cart3, set3v$MICHD)
+```
+
+```{r}
+cart4 <- rpart(MICHD ~ .,
+                data = set4t)
+
+p_cart4 <- predict(cart4, newdata = set4v, type = "class")
+
+confusionMatrix(data = p_cart4, set4v$MICHD)
+```
+
+```{r}
+cart5 <- rpart(MICHD ~ .,
+                data = set5t)
+
+p_cart5 <- predict(cart5, newdata = set5v, type = "class")
+
+confusionMatrix(data = p_cart5, set5v$MICHD)
+```
+
+
+```{r}
+cart6 <- rpart(MICHD ~ .,
+                data = set6t)
+
+p_cart6 <- predict(cart6, newdata = set6v, type = "class")
+
+confusionMatrix(data = p_cart6, set6v$MICHD)
+```
+
+```{r}
+cart7 <- rpart(MICHD ~ .,
+                data = set7t)
+summary(cart7)
+
+p_cart7 <- predict(cart7, newdata = set7v, type = "class")
+
+confusionMatrix(data = p_cart7, set7v$MICHD)
+```
+
+
+```{r}
+library(rpart.plot)
+library(rattle)
+```
+
+
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart1, caption = NULL)
+```
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart2, caption = NULL)
+```
+
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart3, caption = NULL)
+```
+
+
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart4, caption = NULL)
+```
+
+
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart5, caption = NULL)
+```
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart6, caption = NULL)
+```
+```{r, fig.height= 7.5, fig.width= 10}
+fancyRpartPlot(cart7, caption = NULL)
+```
+
+
+***C4.5***
+The C4.5 algorithm is an extension of the ID3 algorithm and constructs a decision tree to maximize information gain (difference in entropy)
+
+```{r}
+C45_s1 <- J48(MICHD ~ ., data= set1t)
+
+summary(C45_s1)
+
+p_C45_s1  <- predict(C45_s1, set1v)
+
+table(p_C45_s1, set1v$MICHD)
+
+confusionMatrix(data = p_C45_s1, set1v$MICHD)
+```
+
+
+```{r}
+C45_s2 <- J48(MICHD ~ ., data= set2t)
+
+summary(C45_s2)
+
+p_C45_s2  <- predict(C45_s2 , set2v)
+
+table(p_C45_s2, set2v$MICHD)
+
+confusionMatrix(data =p_C45_s2, set2v$MICHD)
+```
+
+
+```{r}
+C45_s3 <- J48(MICHD ~ ., data= set3t)
+
+summary(C45_s3)
+
+p_C45_s3  <- predict(C45_s3 , set3v)
+
+table(p_C45_s3, set3v$MICHD)
+
+confusionMatrix(data = p_C45_s3, set3v$MICHD)
+```
+
+```{r}
+C45_s4 <- J48(MICHD ~ ., data= set4t)
+
+summary(C45_s4)
+
+p_C45_s4  <- predict(C45_s4, set4v)
+
+table(p_C45_s4, set4v$MICHD)
+
+confusionMatrix(data = p_C45_s4, set4v$MICHD)
+```
+
+```{r}
+C45_s5 <- J48(MICHD ~ ., data= set5t)
+
+summary(C45_s5)
+
+p_C45_s5  <- predict(C45_s5, set5v)
+
+table(p_C45_s5, set5v$MICHD)
+
+confusionMatrix(data = p_C45_s5, set5v$MICHD)
+```
+
+
+```{r}
+C45_s6 <- J48(MICHD ~ ., data= set6t)
+
+summary(C45_s6)
+
+p_C45_s6  <- predict(C45_s6, set6v)
+
+table(p_C45_s6, set6v$MICHD)
+
+confusionMatrix(data = p_C45_s6, set6v$MICHD)
+```
+
+
+```{r}
+C45_s7 <- J48(MICHD ~ ., data= set7t)
+
+summary(C45_s7)
+
+p_C45_s7  <- predict(C45_s7, set7v)
+
+table(p_C45_s7, set7v$MICHD)
+
+confusionMatrix(data = p_C45_s7, set7v$MICHD)
+```
+
+***PART***
+PART is a rule system that creates pruned C4.5 decision trees for the data set and extracts rules and those instances that are covered by the rules are removed from the training data. The process is repeated until all instances are covered by extracted rules.
+
+```{r}
+part1 <- PART(MICHD ~ ., data= set1t)
+
+summary(part1)
+
+p_part1   <- predict(part1  , set1v)
+
+table(p_part1, set1v$MICHD)
+
+confusionMatrix(data = p_part1, set1v$MICHD)
+```
+
+
+```{r}
+part2 <- PART(MICHD ~ ., data = set2t)
+
+summary(part2)
+
+p_part2   <- predict(part2, set2v)
+
+table(p_part2 ,set2v$MICHD)
+```
+
+
+```{r}
+part3 <- PART(MICHD ~ ., data = set3t)
+
+summary(part3)
+
+p_part3 <- predict(part3, set3v)
+
+table(p_part3 , set1v$MICHD)
+```
+
+
+```{r}
+part4 <- PART(MICHD ~ ., data = set4t)
+
+summary(part4)
+
+p_part4 <- predict(part4  , set4v)
+
+table(p_part4 , set4v$MICHD)
+```
+
+```{r}
+part5 <- PART(MICHD ~ ., data= set5t)
+
+summary(part5)
+
+p_part5   <- predict(part5, set5v)
+
+table(p_part5 , set5v$MICHD)
+```
+
+```{r}
+part6 <- PART(MICHD ~ ., data= set6t)
+
+summary(part6)
+
+p_part6 <- predict(part6, set6v)
+
+table(p_part6, set6v$MICHD)
+```
+
+```{r}
+part7 <- PART(MICHD ~ ., data= set7t)
+
+summary(part7)
+
+p_part7   <- predict(part7, set7v)
+
+table(p_part7, set7v$MICHD)
+```
+
+
+***Bagging CART***
+
+Bootstrapped Aggregation (Bagging) is an ensemble method that creates multiple models of the same type from different sub-samples of the same dataset. The predictions from each separate model are combined together to provide a superior result. This approach has shown participially effective for high-variance methods such as decision trees.
+
+```{r}
+library(ipred)
+```
+
+
+```{r}
+bagg1 <- bagging(MICHD ~ ., data = set1t)
+
+p_bagg1 <- predict(bagg1, set1v, type = "class")
+
+table(p_bagg1, set1v$MICHD)
+
+
+confusionMatrix(p_bagg1, set1v$MICHD)
+```
+
+
+```{r}
+bagg2 <- bagging(MICHD ~ ., data = set2t)
+
+p_bagg2 <- predict(bagg2, set2v, type = "class")
+
+table(p_bagg2, set2v$MICHD)
+
+
+confusionMatrix(p_bagg2, set2v$MICHD)
+```
+
+```{r}
+bagg3 <- bagging(MICHD ~ ., data = set3t)
+
+p_bagg3 <- predict(bagg3, set3v, type = "class")
+
+table(p_bagg3, set3v$MICHD)
+
+confusionMatrix(p_bagg3, set3v$MICHD)
+```
+
+
+```{r}
+bagg4 <- bagging(MICHD ~ ., data = set4t)
+
+p_bagg4 <- predict(bagg4, set4v, type = "class")
+
+table(p_bagg4, set4v$MICHD)
+
+confusionMatrix(p_bagg4, set4v$MICHD)
+```
+
+
+```{r}
+bagg5 <- bagging(MICHD ~ ., data = set5t)
+
+p_bagg5 <- predict(bagg5, set5v, type = "class")
+
+table(p_bagg5, set5v$MICHD)
+
+confusionMatrix(p_bagg5, set5v$MICHD)
+```
+
+
+```{r}
+bagg6 <- bagging(MICHD ~ ., data = set6t)
+
+p_bagg6 <- predict(bagg6, set6v, type = "class")
+
+table(p_bagg6, set6v$MICHD)
+
+confusionMatrix(p_bagg6, set6v$MICHD)
+```
+
+
+```{r}
+bagg7 <- bagging(MICHD ~ ., data = set7t)
+
+p_bagg7 <- predict(bagg7, set7v, type = "class")
+
+table(p_bagg7, set7v$MICHD)
+
+confusionMatrix(p_bagg7, set7v$MICHD)
+```
+
+
+
+***Random Forest***
+Random Forest is variation on Bagging of decision trees by reducing the attributes available to making a tree at each decision point to a random sub-sample. This further increases the variance of the trees and more trees are required.
+
+
+```{r}
+forest1 <- bagging(MICHD ~ ., data = set1t)
+
+p_rf1 <- predict(forest1, set1v)
+
+confusionMatrix(p_rf1, set1v$MICHD)
+```
+
+```{r}
+forest2 <- bagging(MICHD ~ ., data = set2t)
+
+p_rf2 <- predict(forest2, set2v)
+
+confusionMatrix(p_rf2, set2v$MICHD)
+```
+
+
+```{r}
+forest3 <- bagging(MICHD ~ ., data = set3t)
+
+p_rf3 <- predict(forest3, set3v)
+
+confusionMatrix(p_rf3, set3v$MICHD)
+```
+
+```{r}
+forest4 <- bagging(MICHD ~ ., data = set4t)
+
+p_rf4 <- predict(forest4, set4v)
+
+confusionMatrix(p_rf4, set4v$MICHD)
+```
+
+
+
+```{r}
+forest5 <- bagging(MICHD ~ ., data = set5t)
+
+p_rf5 <- predict(forest5, set5v)
+
+confusionMatrix(p_rf5, set5v$MICHD)
+```
+
+
+```{r}
+forest6 <- bagging(MICHD ~ ., data = set6t)
+
+p_rf6 <- predict(forest6, set6v)
+
+confusionMatrix(p_rf6, set6v$MICHD)
+```
+
+
+```{r}
+forest7 <- bagging(MICHD ~ ., data = set7t)
+
+p_rf7 <- predict(forest7, set7v)
+
+confusionMatrix(p_rf7, set7v$MICHD)
+```
+
+
+
+***Boosted C5.0***
+The C5.0 method is a further extension of C4.5 and pinnacle of that line of methods. It was proprietary for a long time, although the code was released recently and is available in the C50 package.
+
+```{r}
+library(C50)
+```
+
+```{r}
+C50s1 <- C5.0(MICHD~., 
+             data = set1t, 
+            trials = 100)
+
+print(C50s1)
+
+p_C50s1 <- predict(C50s1, set1v)
+
+confusionMatrix(p_C50s1, set1v$MICHD)
+```
+
+```{r}
+C50s2 <- C5.0( MICHD~., 
+             data = set2t, 
+            trials = 100)
+
+print(C50s2)
+
+p_C50s2 <- predict(C50s2, set2v)
+
+confusionMatrix(p_C50s2, set2v$MICHD)
+```
+
+```{r}
+C50s3 <- C5.0( MICHD~., 
+             data = set3t, 
+            trials = 100)
+
+print(C50s3)
+
+p_C50s3 <- predict(C50s3, set3v)
+
+confusionMatrix(p_C50s3, set3v$MICHD)
+```
+
+
+```{r}
+C50s4 <- C5.0( MICHD~., 
+             data = set4t, 
+            trials = 100)
+
+print(C50s4)
+
+p_C50s4 <- predict(C50s4, set4v)
+
+confusionMatrix(p_C50s4, set4v$MICHD)
+```
+
+
+```{r}
+C50s5 <- C5.0( MICHD~., 
+             data = set5t, 
+            trials = 100)
+
+print(C50s5)
+
+p_C50s5 <- predict(C50s5, set5v)
+
+confusionMatrix(p_C50s5, set5v$MICHD)
+```
+
+
+```{r}
+C50s6 <- C5.0( MICHD~., 
+             data = set6t, 
+            trials = 100)
+
+print(C50s6)
+
+p_C50s6 <- predict(C50s6, set6v)
+
+confusionMatrix(p_C50s6, set6v$MICHD)
+```
+
+```{r}
+C50s7 <- C5.0( MICHD~., 
+             data = set7t, 
+            trials = 100)
+
+print(C50s7)
+
+p_C50s7 <- predict(C50s7, set7v)
+
+confusionMatrix(p_C50s7, set7v$MICHD)
+```

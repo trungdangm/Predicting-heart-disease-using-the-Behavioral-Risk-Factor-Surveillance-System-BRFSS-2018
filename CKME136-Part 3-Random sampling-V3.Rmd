@@ -1,0 +1,67 @@
+---
+title: "CKME136-Part3-Random sampling- As of 10-03-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggpol)
+library(knitr)
+library(pander)
+library(dplyr)
+```
+
+```{r}
+getwd()
+```
+
+
+```{r}
+BRFSS <- read.csv(file="C:/Users/user/Desktop/Capstone Project/Submission/R codes/BRFSS2018-V3.csv", header=TRUE, sep=",")
+```
+
+Creating training data and testing data set.
+
+```{r}
+colnames(BRFSS)
+```
+
+```{r}
+BRFSS %>% 
+  group_by(MONTH) %>% 
+  dplyr::count()
+```
+
+```{r}
+train29_V3 <- BRFSS %>% 
+  filter(MONTH == "Sept" | MONTH =="Fev"|MONTH =="Mar"|MONTH == "Apr"|MONTH == "May"|MONTH =="June"|MONTH =="July"|MONTH =="Aug")
+```
+
+```{r}
+write.csv(train29_V3, file = "train29-V3.csv", row.names = FALSE)
+```
+
+
+```{r}
+test101_V3<- BRFSS %>% 
+  filter(MONTH == "Jan"|MONTH =="Oct"|MONTH =="Nov"|MONTH == "Dec")
+```
+
+```{r}
+write.csv(test101_V3, file = "test101-V3.csv",row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
